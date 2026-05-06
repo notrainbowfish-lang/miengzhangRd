@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>空間使用紀錄｜預約行程表</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --bg:#fffaf6;
+      --paper:#fffdf9;
+      --ink:#4b3128;
+      --muted:#9a7b6f;
+      --line:#ead9cd;
+      --soft:#f8eee8;
+      --sun:#dce9f2;      /* 上午 嵐色 */
+      --sun-deep:#7a9db9;
+      --noon:#fff0cf;     /* 下午 橘黃色 */
+      --noon-deep:#e49c35;
+      --night:#eee4f6;    /* 晚上 紫色 */
+      --night-deep:#8a6fb2;
+      --sat:#fff0e4;
+      --sunDay:#fff0f3;
+      --green:#dff0d7;
+      --greenText:#456f3c;
+      --orange:#ffe5bd;
+      --orangeText:#98611c;
+      --red:#ffd8d8;
+      --redText:#a64747;
+      --gray:#e8e5e1;
+      --grayText:#746d68;
+      --shadow:0 10px 30px rgba(95,56,35,.08);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at top left, rgba(255,226,216,.75), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(237,224,247,.55), transparent 30%),
+        var(--bg);
+      color:var(--ink);
+      font-family:"Noto Serif CJK JP","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",serif;
+    }
+
+    .app{
+      max-width:1500px;
+      margin:0 auto;
+      padding:26px;
+    }
+
+    #capture{
+      background:rgba(255,253,249,.9);
+      border:1px solid var(--line);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    header{
+      display:grid;
+      grid-template-columns:260px 1fr auto;
+      gap:18px;
+      align-items:center;
+      padding:24px 28px 18px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,250,246,.98), rgba(255,253,249,.84));
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:#9b6d5c;
+    }
+    .logo{
+      width:46px;height:46px;border:1px solid #e7cfc2;border-radius:16px;
+      display:grid;place-items:center;font-size:24px;background:#fff9f5;
+    }
+    .brand-title{font-size:22px;letter-spacing:.14em}
+    .brand-sub{font-size:12px;letter-spacing:.08em;color:#b59080;margin-top:2px}
+
+    h1{
+      margin:0;
+      text-align:center;
+      font-size:40px;
+      letter-spacing:.12em;
+      font-weight:500;
+    }
+    h1 span{font-size:24px;letter-spacing:.18em;margin-left:14px;color:#6d4a3d}
+
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    button{
+      border:1px solid var(--line);
+      background:#fffdf9;
+      color:var(--ink);
+      border-radius:12px;
+      padding:10px 16px;
+      font-size:15px;
+      cursor:pointer;
+      box-shadow:0 4px 12px rgba(90,50,25,.04);
+    }
+    button:hover{background:#fff7f1}
+
+    .content{
+      display:grid;
+      grid-template-columns:1fr 330px;
+      min-height:900px;
+    }
+
+    main{
+      padding:18px 22px 26px;
+    }
+
+    .legend{
+      display:flex;
+      gap:26px;
+      align-items:center;
+      margin:0 0 12px 4px;
+      flex-wrap:wrap;
+      color:#6b4b40;
+      font-size:15px;
+    }
+    .dot{width:15px;height:15px;border-radius:5px;display:inline-block;margin-right:8px;vertical-align:-2px}
+    .g{background:var(--green)}
+    .o{background:var(--orange)}
+    .r{background:var(--red)}
+    .x{background:var(--gray)}
+
+    .calendar{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      border:1px solid var(--line);
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .weekday{
+      height:38px;
+      display:grid;
+      place-items:center;
+      background:#fbefe8;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      font-size:18px;
+    }
+    .weekday:nth-child(7n), .day:nth-child(7n){border-right:none}
+    .weekday.sun{color:#b54d52;background:var(--sunDay)}
+    .weekday.sat{color:#b54d52;background:var(--sat)}
+
+    .day{
+      min-height:148px;
+      padding:9px 8px 8px;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      position:relative;
+      background:#fffdf9;
+    }
+    .day.sat{background:linear-gradient(180deg,var(--sat),#fffdf9 42%)}
+    .day.sun{background:linear-gradient(180deg,var(--sunDay),#fffdf9 42%)}
+    .day.empty{background:rgba(255,255,255,.35)}
+    .day-num{
+      font-size:20px;
+      line-height:1;
+      margin-bottom:6px;
+      font-weight:600;
+    }
+    
+
+    .slot{
+      border-radius:10px;
+      margin:6px 0;
+      padding:8px 9px;
+      min-height:32px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .slot-content{
+      outline:none;
+      min-height:auto;
+      white-space:nowrap;
+      line-height:1.35;
+      word-break:keep-all;
+      font-weight:700;
+    }
+    .status-text.available{color:#4f9b54}
+    .status-text.limited{color:#d88a1d}
+    .status-text.limited{color:#d88a1d}
+    .status-text.full{color:#8d8780}
+    .status-text.unavailable{color:#d85c5c}
+    .status-text.closed{color:#77716c}
+    .slot-content:empty:before{content:"可預約";color:#4f9b54}
+    .slot, .slot-content, .slot-content *{pointer-events:auto}
+
+    .slot.morning{background:var(--sun)}
+    .slot.afternoon{background:var(--noon)}
+    .slot.evening{background:var(--night)}
+    .slot-label{
+      font-weight:700;
+      white-space:nowrap;
+      font-size:15px;
+    }
+    .morning .slot-label{color:#517e9d}
+    .afternoon .slot-label{color:#d47b16}
+    .evening .slot-label{color:#7a5aa5}
+    .day.closed .slot-content:empty:before{content:"—";color:#9b918b}
+
+    aside{
+      border-left:1px solid var(--line);
+      padding:24px;
+      background:rgba(255,250,246,.66);
+    }
+    .panel{
+      background:rgba(255,253,249,.9);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:22px 20px;
+      margin-bottom:22px;
+      box-shadow:0 8px 24px rgba(90,50,25,.04);
+    }
+    .panel h2{
+      margin:0 0 18px;
+      text-align:center;
+      font-size:24px;
+      letter-spacing:.14em;
+      font-weight:500;
+    }
+    .period{
+      margin:20px 0 22px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 16px;
+      border-radius:999px;
+      font-weight:700;
+      margin-bottom:10px;
+      font-size:17px;
+    }
+    .pill.morning{background:var(--sun);color:#47728e}
+    .pill.afternoon{background:var(--noon);color:#d47b16}
+    .pill.evening{background:var(--night);color:#7457a0}
+    .editable{
+      min-height:72px;
+      border:1px dashed transparent;
+      padding:6px 8px;
+      border-radius:10px;
+      outline:none;
+      line-height:1.8;
+      white-space:pre-wrap;
+    }
+    .editable:hover,.editable:focus{border-color:#e4cfc3;background:#fffaf6}
+    .editable:empty:before{content:"點這裡填寫內容";color:#b49a8f}
+
+    .notice .editable{
+      min-height:150px;
+      line-height:1.9;
+    }
+
+    .quote{
+      text-align:center;
+      color:#8b6a5d;
+      letter-spacing:.1em;
+      margin:18px 0 0;
+      font-size:15px;
+    }
+
+    .floating-editor{
+      position:fixed;
+      inset:auto 24px 24px auto;
+      width:min(360px, calc(100vw - 48px));
+      background:#fffdf9;
+      border:1px solid var(--line);
+      box-shadow:0 20px 50px rgba(70,35,20,.18);
+      border-radius:20px;
+      padding:18px;
+      z-index:20;
+      display:none;
+    }
+    .floating-editor.show{display:block}
+    .floating-editor h3{margin:0 0 12px;font-size:20px}
+    .row{display:grid;gap:6px;margin:10px 0}
+    label{font-size:14px;color:#74584d}
+    select,input,textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:10px;
+      padding:9px 10px;
+      font-size:15px;
+      color:var(--ink);
+      font-family:inherit;
+    }
+    textarea{min-height:92px;resize:vertical}
+    .editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .hint{font-size:12px;color:#9b7f73;line-height:1.5;margin-top:8px}
+
+    
+    @media(max-width:1100px){
+      .content{
+        grid-template-columns:1fr;
+      }
+
+      aside{
+        border-left:none;
+        border-top:1px solid var(--line);
+        padding:18px;
+      }
+
+      header{
+        grid-template-columns:1fr;
+        gap:14px;
+        padding:20px 18px 14px;
+      }
+
+      h1{
+        text-align:center;
+        font-size:30px;
+        line-height:1.35;
+      }
+
+      h1 span{
+        display:block;
+        margin-left:0;
+        margin-top:6px;
+        font-size:20px;
+      }
+
+      .controls{
+        justify-content:center;
+      }
+
+      main{
+        overflow-x:auto;
+        padding:14px;
+      }
+
+      .calendar{
+        min-width:760px;
+      }
+    }
+
+    @media(max-width:768px){
+      body{
+        background:#fffaf6;
+      }
+
+      .app{
+        padding:10px;
+      }
+
+      #capture{
+        border-radius:20px;
+      }
+
+      .brand{
+        justify-content:center;
+      }
+
+      .brand-title{
+        font-size:20px;
+        text-align:center;
+      }
+
+      .brand-sub{
+        text-align:center;
+      }
+
+      h1{
+        font-size:26px;
+        letter-spacing:.08em;
+      }
+
+      .controls{
+        gap:8px;
+      }
+
+      button{
+        flex:1;
+        min-width:0;
+        padding:10px 8px;
+        font-size:14px;
+      }
+
+      .calendar{
+        min-width:640px;
+      }
+
+      .day{
+        min-height:128px;
+        padding:6px;
+      }
+
+      .day-num{
+        font-size:18px;
+      }
+
+      .slot{
+        padding:6px 7px;
+        border-radius:8px;
+        font-size:13px;
+      }
+
+      .slot-label{
+        font-size:14px;
+      }
+
+      aside{
+        display:grid;
+        gap:14px;
+      }
+
+      .panel{
+        margin-bottom:0;
+        padding:18px 16px;
+        border-radius:16px;
+      }
+
+      .panel h2{
+        font-size:22px;
+      }
+
+      .editable{
+        font-size:14px;
+      }
+
+      .quote{
+        font-size:13px;
+        line-height:1.8;
+        padding:0 10px 10px;
+      }
+
+      .floating-editor{
+        left:12px;
+        right:12px;
+        width:auto;
+        bottom:12px;
+        border-radius:18px;
+      }
+    }
+
+  </style>
+
+<style>
+  .day-num small{
+    display:none;
+    font-size:13px;
+    font-weight:500;
+    color:var(--muted);
+    margin-left:6px;
+  }
+
+  .readonly-note{
+    font-size:12px;
+    color:#a98f83;
+    text-align:center;
+    margin-top:-8px;
+    margin-bottom:10px;
+  }
+
+  @media(max-width:768px){
+    .app{
+      padding:8px;
+    }
+
+    #capture{
+      border-radius:18px;
+    }
+
+    header{
+      padding:16px 14px 12px;
+    }
+
+    .brand{
+      justify-content:center;
+    }
+
+    h1{
+      text-align:center;
+      font-size:24px;
+      letter-spacing:.06em;
+    }
+
+    h1 span{
+      display:block;
+      margin:4px 0 0;
+      font-size:18px;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      width:100%;
+    }
+
+    .controls button{
+      width:100%;
+      flex:auto;
+    }
+
+    main{
+      padding:12px;
+      overflow:visible;
+    }
+
+    .calendar{
+      display:block;
+      min-width:0;
+      width:100%;
+      border:none;
+      background:transparent;
+      border-radius:0;
+      overflow:visible;
+    }
+
+    .weekday{
+      display:none;
+    }
+
+    .day.empty{
+      display:none;
+    }
+
+    .day{
+      width:100%;
+      min-height:0;
+      margin:0 0 12px;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#fffdf9;
+      box-shadow:0 6px 18px rgba(95,56,35,.05);
+    }
+
+    .day.sat{
+      background:linear-gradient(90deg,var(--sat),#fffdf9 35%);
+    }
+
+    .day.sun{
+      background:linear-gradient(90deg,var(--sunDay),#fffdf9 35%);
+    }
+
+    .day-num{
+      display:flex;
+      align-items:baseline;
+      gap:4px;
+      font-size:22px;
+      margin-bottom:8px;
+    }
+
+    .day-num small{
+      display:inline;
+    }
+
+    .slot{
+      min-height:38px;
+      padding:9px 10px;
+      margin:7px 0;
+      font-size:15px;
+    }
+
+    .slot-label{
+      font-size:15px;
+    }
+
+    .slot-content{
+      font-size:15px;
+    }
+
+    aside{
+      border-top:1px solid var(--line);
+      border-left:none;
+      padding:14px 12px 18px;
+    }
+
+    .panel{
+      padding:18px 16px;
+      margin-bottom:14px;
+    }
+
+    .period{
+      margin:14px 0 18px;
+    }
+
+    .editable{
+      border-color:transparent !important;
+      background:transparent !important;
+    }
+
+    .floating-editor{
+      left:10px;
+      right:10px;
+      bottom:10px;
+      width:auto;
+      max-height:88vh;
+      overflow:auto;
+    }
+  }
+</style>
+
+
+<style>
+  @media(max-width:768px){
+    main{
+      overflow-x:auto !important;
+      -webkit-overflow-scrolling:touch;
+      padding:12px !important;
+    }
+
+    .calendar{
+      display:grid !important;
+      grid-template-columns:repeat(7, 104px) !important;
+      width:max-content !important;
+      min-width:728px !important;
+      border:1px solid var(--line) !important;
+      border-radius:14px !important;
+      overflow:hidden !important;
+      background:#fff !important;
+    }
+
+    .weekday{
+      display:grid !important;
+      height:34px !important;
+      font-size:15px !important;
+    }
+
+    .day.empty{
+      display:block !important;
+    }
+
+    .day{
+      width:auto !important;
+      min-height:112px !important;
+      margin:0 !important;
+      padding:6px !important;
+      border:none !important;
+      border-right:1px solid var(--line) !important;
+      border-bottom:1px solid var(--line) !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      background:#fffdf9 !important;
+    }
+
+    .day.sat{
+      background:linear-gradient(180deg,var(--sat),#fffdf9 42%) !important;
+    }
+
+    .day.sun{
+      background:linear-gradient(180deg,var(--sunDay),#fffdf9 42%) !important;
+    }
+
+    .day-num{
+      display:block !important;
+      font-size:17px !important;
+      margin-bottom:4px !important;
+      line-height:1 !important;
+    }
+
+    .day-num small{
+      display:none !important;
+    }
+
+    .slot{
+      min-height:24px !important;
+      height:24px !important;
+      padding:4px 5px !important;
+      margin:4px 0 !important;
+      border-radius:7px !important;
+      font-size:12px !important;
+      gap:3px !important;
+      display:flex !important;
+      align-items:center !important;
+      justify-content:space-between !important;
+    }
+
+    .slot-label{
+      font-size:12px !important;
+    }
+
+    .slot-content{
+      font-size:12px !important;
+      white-space:nowrap !important;
+    }
+
+    .quote{
+      min-width:728px;
+      text-align:center;
+    }
+  }
+
+  @media(max-width:430px){
+    .calendar{
+      grid-template-columns:repeat(7, 96px) !important;
+      min-width:672px !important;
+    }
+
+    .day{
+      min-height:106px !important;
+    }
+
+    .quote{
+      min-width:672px;
+    }
+  }
+</style>
+
+
+<style>
+  /* v11 final layout patch: title block centered, calendar auto fits viewport */
+  header{
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+    align-items:center !important;
+    gap:10px !important;
+    text-align:center !important;
+  }
+
+  .brand{
+    justify-content:center !important;
+    text-align:center !important;
+  }
+
+  .brand-title{
+    text-align:center !important;
+  }
+
+  .brand-sub{
+    text-align:center !important;
+  }
+
+  h1{
+    text-align:center !important;
+    width:100% !important;
+    line-height:1.35 !important;
+  }
+
+  h1 span{
+    display:inline-block !important;
+  }
+
+  .controls{
+    justify-content:center !important;
+  }
+
+  .calendar{
+    width:100% !important;
+    min-width:0 !important;
+    display:grid !important;
+    grid-template-columns:repeat(7, minmax(0, 1fr)) !important;
+  }
+
+  .day{
+    min-width:0 !important;
+  }
+
+  .slot{
+    min-width:0 !important;
+  }
+
+  .slot-content{
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  @media(max-width:900px){
+    .content{
+      grid-template-columns:1fr !important;
+    }
+
+    aside{
+      border-left:none !important;
+      border-top:1px solid var(--line) !important;
+    }
+
+    main{
+      overflow:visible !important;
+    }
+
+    .calendar{
+      min-width:0 !important;
+      width:100% !important;
+      grid-template-columns:repeat(7, minmax(0, 1fr)) !important;
+      border:1px solid var(--line) !important;
+      border-radius:14px !important;
+      overflow:hidden !important;
+    }
+
+    .weekday{
+      display:grid !important;
+    }
+
+    .day.empty{
+      display:block !important;
+    }
+
+    .day{
+      display:block !important;
+      min-height:96px !important;
+      margin:0 !important;
+      padding:5px !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      border-right:1px solid var(--line) !important;
+      border-bottom:1px solid var(--line) !important;
+    }
+
+    .day-num{
+      display:block !important;
+      font-size:15px !important;
+      margin-bottom:4px !important;
+      line-height:1 !important;
+    }
+
+    .day-num small{
+      display:none !important;
+    }
+
+    .slot{
+      min-height:22px !important;
+      height:22px !important;
+      padding:3px 4px !important;
+      margin:3px 0 !important;
+      border-radius:6px !important;
+      gap:2px !important;
+    }
+
+    .slot-label{
+      font-size:11px !important;
+      flex:0 0 auto !important;
+    }
+
+    .slot-content{
+      font-size:11px !important;
+      min-width:0 !important;
+    }
+
+    .quote{
+      min-width:0 !important;
+      width:100% !important;
+    }
+  }
+
+  @media(max-width:520px){
+    .app{
+      padding:6px !important;
+    }
+
+    header{
+      padding:14px 10px 12px !important;
+    }
+
+    .brand .logo{
+      width:38px !important;
+      height:38px !important;
+      border-radius:13px !important;
+    }
+
+    .brand-title{
+      font-size:17px !important;
+      letter-spacing:.08em !important;
+    }
+
+    .brand-sub{
+      font-size:10px !important;
+    }
+
+    h1{
+      font-size:20px !important;
+      letter-spacing:.05em !important;
+    }
+
+    h1 span{
+      font-size:16px !important;
+      margin-left:6px !important;
+    }
+
+    main{
+      padding:8px !important;
+    }
+
+    .weekday{
+      height:28px !important;
+      font-size:13px !important;
+    }
+
+    .day{
+      min-height:82px !important;
+      padding:4px !important;
+    }
+
+    .day-num{
+      font-size:13px !important;
+      margin-bottom:3px !important;
+    }
+
+    .slot{
+      height:18px !important;
+      min-height:18px !important;
+      padding:2px 3px !important;
+      margin:2px 0 !important;
+      border-radius:5px !important;
+    }
+
+    .slot-label{
+      font-size:10px !important;
+    }
+
+    .slot-content{
+      font-size:10px !important;
+    }
+
+    .controls{
+      grid-template-columns:1fr 1fr !important;
+      width:100% !important;
+    }
+  }
+
+  @media(max-width:390px){
+    .slot-label{
+      font-size:9px !important;
+    }
+
+    .slot-content{
+      font-size:9px !important;
+    }
+
+    .day{
+      min-height:76px !important;
+    }
+  }
+</style>
+
+
+<style>
+  .slot{
+    justify-content:center !important;
+  }
+
+  .slot-label{
+    display:none !important;
+  }
+
+  .slot-content{
+    width:100%;
+    text-align:center;
+    font-weight:700;
+    letter-spacing:.04em;
+  }
+</style>
+
+
+<style>
+  /* v13 header and today highlight */
+  header{
+    display:grid !important;
+    grid-template-columns:auto 1fr auto !important;
+    align-items:center !important;
+    gap:18px !important;
+    text-align:left !important;
+  }
+
+  .brand{
+    justify-content:flex-start !important;
+    text-align:left !important;
+    min-width:260px;
+  }
+
+  .brand-title,
+  .brand-sub{
+    text-align:left !important;
+  }
+
+  h1{
+    text-align:center !important;
+    width:auto !important;
+    font-size:30px !important;
+    letter-spacing:.12em !important;
+    white-space:nowrap;
+  }
+
+  h1 span{
+    display:inline !important;
+    margin-left:10px !important;
+    font-size:22px !important;
+  }
+
+  .controls{
+    justify-content:flex-end !important;
+    display:flex !important;
+    flex-wrap:nowrap !important;
+  }
+
+  .day.today{
+    outline:3px solid rgba(216, 138, 29, .45);
+    outline-offset:-4px;
+    background:
+      linear-gradient(180deg, rgba(255,232,186,.42), rgba(255,253,249,.96)) !important;
+  }
+
+  .day.today .day-num span{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:26px;
+    height:26px;
+    border-radius:999px;
+    background:#ffe5bd;
+    color:#8b4f13;
+  }
+
+  @media(max-width:900px){
+    header{
+      grid-template-columns:1fr !important;
+      text-align:center !important;
+      gap:12px !important;
+    }
+
+    .brand{
+      justify-content:center !important;
+      text-align:center !important;
+      min-width:0;
+    }
+
+    .brand-title,
+    .brand-sub{
+      text-align:center !important;
+    }
+
+    h1{
+      white-space:normal;
+      font-size:24px !important;
+    }
+
+    h1 span{
+      font-size:18px !important;
+      margin-left:6px !important;
+    }
+
+    .controls{
+      justify-content:center !important;
+      flex-wrap:wrap !important;
+    }
+  }
+</style>
+
+
+<style>
+/* v14 center title properly */
+header{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  padding:22px 26px 18px !important;
+}
+
+.brand{
+  width:320px !important;
+  display:flex !important;
+  align-items:center !important;
+}
+
+h1{
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  margin:0 !important;
+  width:max-content !important;
+  text-align:center !important;
+}
+
+.controls{
+  width:320px !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+}
+
+@media(max-width:900px){
+  header{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    justify-items:center !important;
+  }
+
+  h1{
+    position:static !important;
+    transform:none !important;
+  }
+
+  .brand,
+  .controls{
+    width:auto !important;
+  }
+}
+</style>
+
+
+<style>
+  /* v15 status colors */
+  .status-text.full{
+    color:#8d8780 !important; /* 已額滿：灰色 */
+  }
+
+  .status-text.closed{
+    color:#8b5e3c !important; /* 公休：咖啡色 */
+  }
+
+  .status-text.unavailable{
+    color:#d85c5c !important; /* 不可預約：紅色 */
+  }
+</style>
+
+
+<style>
+/* v16 header overlap fix */
+header{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:320px 1fr 320px !important;
+  align-items:center !important;
+  gap:16px !important;
+  min-height:110px !important;
+}
+
+.brand{
+  width:100% !important;
+  justify-content:flex-start !important;
+}
+
+h1{
+  position:static !important;
+  transform:none !important;
+  width:100% !important;
+  text-align:center !important;
+  display:block !important;
+  font-size:24px !important;
+  line-height:1.4 !important;
+  white-space:nowrap !important;
+}
+
+.controls{
+  width:100% !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.controls button{
+  white-space:nowrap !important;
+}
+
+@media(max-width:900px){
+  header{
+    grid-template-columns:1fr !important;
+    min-height:auto !important;
+  }
+
+  h1{
+    white-space:normal !important;
+    font-size:22px !important;
+  }
+
+  .brand{
+    justify-content:center !important;
+  }
+
+  .controls{
+    justify-content:center !important;
+    flex-wrap:wrap !important;
+  }
+}
+</style>
+
+
+<style>
+/* v17 A/B mode */
+.mode-b .admin-only{display:none !important;}
+.mode-a .viewer-only{display:none !important;}
+
+#modeA.active,#modeB.active{
+  background:#f3dfd2 !important;
+  border-color:#d4ad98 !important;
+  font-weight:700;
+}
+
+.admin-detail{
+  display:none;
+  margin-top:3px;
+  font-size:10px;
+  color:#8a6f64;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.mode-a .admin-detail{
+  display:block;
+}
+.mode-a .slot{
+  min-height:32px !important;
+}
+.mode-a .editable{
+  border:1px dashed #e4cfc3 !important;
+  background:#fffaf6 !important;
+}
+.mode-b .editable{
+  border-color:transparent !important;
+  background:transparent !important;
+}
+.mode-a .day{
+  cursor:pointer;
+}
+.mode-b .slot{
+  cursor:default !important;
+}
+</style>
+
+
+<style>
+/* v18 real A/B logic */
+.admin-detail{
+  display:none;
+  margin-top:3px;
+  font-size:10px;
+  line-height:1.25;
+  color:#8a6f64;
+  text-align:center;
+}
+.mode-a .admin-detail{display:block;}
+.mode-a .slot{min-height:40px !important;}
+.mode-b .slot{min-height:28px !important;}
+
+.mode-a .admin-edit{
+  border:1px dashed #d8b7a8 !important;
+  background:#fffaf6 !important;
+  cursor:text !important;
+}
+.mode-b .admin-edit{
+  border-color:transparent !important;
+  background:transparent !important;
+  cursor:default !important;
+}
+.mode-a .admin-edit:focus{
+  outline:2px solid rgba(216,138,29,.25);
+}
+</style>
+
+
+<style>
+/* v19 sidebar edit fix */
+.mode-a .admin-edit{
+  pointer-events:auto !important;
+  user-select:text !important;
+  -webkit-user-select:text !important;
+  cursor:text !important;
+  border:1px dashed #d8b7a8 !important;
+  background:#fffaf6 !important;
+}
+.mode-b .admin-edit{
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  cursor:default !important;
+  border-color:transparent !important;
+  background:transparent !important;
+}
+.mode-a .admin-edit:empty:before{
+  content:"點這裡填寫內容";
+  color:#b49a8f;
+}
+</style>
+
+
+<style>
+  .admin-identity{
+    align-self:center;
+    color:#9a7b6f;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .mode-b .admin-identity{
+    display:none;
+  }
+</style>
+
+
+<style>
+/* v27-safe: sidebar textarea editor for Chinese IME */
+.editable-display{
+  min-height:72px;
+  padding:6px 8px;
+  border-radius:10px;
+  line-height:1.8;
+  white-space:pre-wrap;
+}
+.notice-display{min-height:150px}
+.mini-edit-btn{
+  margin-top:8px;
+  border-radius:10px;
+  padding:6px 12px;
+  font-size:13px;
+}
+.mode-b .mini-edit-btn{display:none!important}
+.text-editor-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(40,25,18,.28);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:60;
+}
+.text-editor-modal.show{display:flex}
+.text-editor-box{
+  width:min(560px,calc(100vw - 24px));
+  background:#fffdf9;
+  border-radius:22px;
+  border:1px solid #ead9cd;
+  padding:20px;
+  box-shadow:0 25px 60px rgba(40,25,18,.2);
+}
+#textEditorTextarea{
+  min-height:260px;
+  width:100%;
+  margin-top:12px;
+  font-size:16px;
+  line-height:1.8;
+}
+</style>
+
+</head>
+<body>
+  <div class="app">
+    <section id="capture">
+      <header>
+        <div class="brand">
+          <div class="logo">✧</div>
+          <div>
+            <div class="brand-title" >身心靈美學共享工作室</div>
+            <div class="brand-sub" >・Mind Body Spirit Shared Studio・</div>
+          </div>
+        </div>
+        <h1><span id="titleYearMonth"></span><span>空間使用紀錄</span></h1>
+        <div class="controls no-capture">
+          <button id="modeA" type="button">管理</button>
+          <button id="modeB" type="button">查看</button><span id="adminIdentity" class="admin-identity no-capture"></span>
+          <button id="prevBtn">‹ 上個月</button>
+          <button id="nextBtn">下個月 ›</button>
+                    <button id="exportBtn">⇩ 匯出圖片</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <main>          <div class="calendar" id="calendar"></div>
+          <div class="quote" >＊ 若有臨時調整，請以最新公告為主，感謝您的理解與配合。＊</div><div id="syncStatus" class="quote no-capture">尚未連線資料庫</div>
+        </main>
+
+        <aside>
+          <div class="panel">
+            <h2>時段預約項目</h2>
+            <div class="period">
+              <div class="pill morning">☀ 上午</div>
+              <div class="editable-display" data-edit="items_morning">臉部保養、身體課程、頭皮檢測<br>療癒課程、牌卡諮詢、其他療癒項目</div>
+              <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_morning">編輯</button>
+            </div>
+            <div class="period">
+              <div class="pill afternoon">☀ 下午</div>
+              <div class="editable-display" data-edit="items_afternoon">臉部保養、身體課程、頭皮檢測<br>療癒課程、牌卡諮詢、其他療癒項目</div>
+              <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_afternoon">編輯</button>
+            </div>
+            <div class="period">
+              <div class="pill evening">☾ 晚上</div>
+              <div class="editable-display" data-edit="items_evening">臉部保養、療癒課程、牌卡諮詢<br>其他療癒項目</div>
+              <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_evening">編輯</button>
+            </div>
+          </div>
+
+          <div class="panel notice">
+            <h2>📣 本月公告</h2>
+            <div class="editable-display notice-display" id="monthNotice" data-edit="month_notice">• 5/10（日）公休一天<br>• 如需更改預約，請提前一天告知<br>• 感謝您的配合與理解 ♡</div>
+            <button class="mini-edit-btn admin-only no-capture" data-open-edit="month_notice">編輯公告</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+
+  <div class="text-editor-modal no-capture" id="textEditorModal">
+    <div class="text-editor-box">
+      <h3 id="textEditorTitle">編輯內容</h3>
+      <textarea id="textEditorTextarea"></textarea>
+      <div class="editor-actions">
+        <button id="closeTextEditor">取消</button>
+        <button id="saveTextEditor">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="floating-editor no-capture" id="editor">
+    <h3 id="editorTitle">編輯空間使用</h3>
+    <div class="row">
+      <label>時段</label>
+      <select id="editSlot">
+        <option value="morning">上午</option>
+        <option value="afternoon">下午</option>
+        <option value="evening">晚上</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>特殊狀態</label>
+      <select id="editSpecial">
+        <option value="normal">依空間自動判斷</option>
+        <option value="unavailable">不可預約</option>
+        <option value="closed">公休</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>39前（最多 3 位，用、分隔）</label>
+      <input id="editFront39" placeholder="例如：愉、燕、如" />
+    </div>
+    <div class="row">
+      <label>39後（最多 1 位）</label>
+      <input id="editBack39" placeholder="例如：妏" />
+    </div>
+    <div class="row">
+      <label>41（最多 1 位）</label>
+      <input id="editRoom41" placeholder="例如：燕" />
+    </div>
+    <div class="row">
+      <label>內部備註（可不填）</label>
+      <textarea id="editText" placeholder="例如：團體課程、包場、老師外出"></textarea>
+    </div>
+    <div class="hint">
+      A 管理模式填空間與使用者；B 查看模式只顯示系統自動判斷後的「可預約／尚有空間／已額滿／不可預約／公休」。
+    </div>
+    <div class="editor-actions">
+      <button id="closeEditor">取消</button>
+      <button id="clearSlot">清空</button>
+      <button id="saveEditor">儲存</button>
+    </div>
+  </div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+(() => {
+  /*
+    Firebase 設定：
+    請把 Firebase Console 提供的 firebaseConfig 完整貼到下面。
+    目前 projectId 與 senderId 已先放入，apiKey / appId 需要完整值才會真正同步。
+  */
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYqjs5agGcQHrtWtGhWM6QZcTOnvDUAus",
+    authDomain: "shared-studio-calendar.firebaseapp.com",
+    projectId: "shared-studio-calendar",
+    storageBucket: "shared-studio-calendar.firebasestorage.app",
+    messagingSenderId: "270042374501",
+    appId: "1:270042374501:web:45f4d58b7bd96a30c6418c",
+    measurementId: "G-EL87H90NRE"
+  };
+
+  // 管理邏輯：共用管理密碼 + 自由輸入修改人名稱。
+  // 不使用 Firebase Auth 帳號系統，避免之後新增人員時還要建立帳號。
+  const FIREBASE_READY =
+    firebaseConfig.apiKey &&
+    !firebaseConfig.apiKey.includes("PASTE_") &&
+    firebaseConfig.appId &&
+    !firebaseConfig.appId.includes("PASTE_");
+
+  const app = FIREBASE_READY ? initializeApp(firebaseConfig) : null;
+  const db = FIREBASE_READY ? getFirestore(app) : null;
+
+  const STORAGE_PREFIX = "space-calendar-v1:";
+  const slotLabels = { morning:"上午", afternoon:"下午", evening:"晚上" };
+  const slotOrder = ["morning","afternoon","evening"];
+  const weekdays = ["日","一","二","三","四","五","六"];
+
+  const defaultItems = {
+    morning: "臉部保養、身體課程、頭皮檢測\n療癒課程、牌卡諮詢、其他療癒項目",
+    afternoon: "臉部保養、身體課程、頭皮檢測\n療癒課程、牌卡諮詢、其他療癒項目",
+    evening: "臉部保養、療癒課程、牌卡諮詢\n其他療癒項目"
+  };
+
+  const defaultNotice = "• 如需更改預約，請提前一天告知\n• 若有臨時調整，請以最新公告為主\n• 感謝您的配合與理解 ♡";
+
+  let current = new Date();
+  current.setDate(1);
+  let selectedDateKey = null;
+  let selectedSlot = "morning";
+  let currentMode = "b";
+  let adminName = localStorage.getItem(STORAGE_PREFIX + "adminName") || "";
+  let unsubscribeMonth = null;
+  let monthData = {
+    days: {},
+    items: { ...defaultItems },
+    notice: defaultNotice,
+    backgroundUrl: "",
+    updatedAt: null,
+    updatedBy: ""
+  };
+
+  const calendar = document.getElementById("calendar");
+  const titleYearMonth = document.getElementById("titleYearMonth");
+  const syncStatus = document.getElementById("syncStatus");
+
+  function ymKey(){
+    return `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,"0")}`;
+  }
+
+  function dateKey(day){
+    return `${ymKey()}-${String(day).padStart(2,"0")}`;
+  }
+
+  function monthRef(){
+    return doc(db, "months", ymKey());
+  }
+
+  function localFallbackKey(){
+    return STORAGE_PREFIX + "firebase-fallback:" + ymKey();
+  }
+
+  function readFallback(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(localFallbackKey()) || "null");
+      return saved || null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function writeFallback(data){
+    localStorage.setItem(localFallbackKey(), JSON.stringify(data));
+  }
+
+  function normalizeMonth(raw){
+    return {
+      days: raw?.days || {},
+      items: {
+        morning: raw?.items?.morning ?? defaultItems.morning,
+        afternoon: raw?.items?.afternoon ?? defaultItems.afternoon,
+        evening: raw?.items?.evening ?? defaultItems.evening
+      },
+      notice: raw?.notice ?? defaultNotice,
+      backgroundUrl: raw?.backgroundUrl || "",
+      updatedAt: raw?.updatedAt || null,
+      updatedBy: raw?.updatedBy || ""
+    };
+  }
+
+  function splitPeople(text){
+    if(!text) return [];
+    return String(text).split(/[、,，\/＋+]/).map(x => x.trim()).filter(Boolean);
+  }
+
+  function deriveSlotStatus(obj, slot){
+    const special = obj?.[slot + "_special"] || "normal";
+    if(special === "closed") return "closed";
+    if(special === "unavailable") return "unavailable";
+
+    const used = Math.min(splitPeople(obj?.[slot + "_front39"]).length, 3)
+      + Math.min(splitPeople(obj?.[slot + "_back39"]).length, 1)
+      + Math.min(splitPeople(obj?.[slot + "_room41"]).length, 1);
+
+    if(used <= 0) return "available";
+    if(used >= 5) return "full";
+    return "limited";
+  }
+
+  function makeAdminDetail(obj, slot){
+    const rows = [];
+    const front = obj?.[slot + "_front39"] || "";
+    const back = obj?.[slot + "_back39"] || "";
+    const room41 = obj?.[slot + "_room41"] || "";
+    const note = obj?.[slot] || "";
+
+    if(front) rows.push("39前｜" + front);
+    if(back) rows.push("39後｜" + back);
+    if(room41) rows.push("41｜" + room41);
+    if(note) rows.push("備註｜" + note);
+
+    return rows.join("<br>");
+  }
+
+  function setMode(mode){
+    currentMode = mode;
+    document.body.classList.toggle("mode-a", mode === "a");
+    document.body.classList.toggle("mode-b", mode === "b");
+
+    const a = document.getElementById("modeA");
+    const b = document.getElementById("modeB");
+    if(a && b){
+      a.classList.toggle("active", mode === "a");
+      b.classList.toggle("active", mode === "b");
+    }
+
+    document.querySelectorAll(".admin-edit").forEach(el => {
+      el.contentEditable = mode === "a" ? "true" : "false";
+      el.setAttribute("aria-readonly", mode === "a" ? "false" : "true");
+    });
+
+    const identity = document.getElementById("adminIdentity");
+    if(identity){
+      identity.textContent = mode === "a" && adminName ? `目前管理者：${adminName}` : "";
+    }
+  }
+
+  function escapeHtmlText(value){
+    return String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
+
+  function nl2br(value){
+    return escapeHtmlText(value).split("\n").join("<br>");
+  }
+
+  function renderSidebars(){
+    const morning = document.querySelector('[data-edit="items_morning"]');
+    const afternoon = document.querySelector('[data-edit="items_afternoon"]');
+    const evening = document.querySelector('[data-edit="items_evening"]');
+    const notice = document.getElementById("monthNotice");
+
+    if(morning) morning.innerHTML = nl2br(monthData.items.morning);
+    if(afternoon) afternoon.innerHTML = nl2br(monthData.items.afternoon);
+    if(evening) evening.innerHTML = nl2br(monthData.items.evening);
+    if(notice) notice.innerHTML = nl2br(monthData.notice);
+  }
+
+  function renderSyncStatus(){
+    if(!syncStatus) return;
+
+    if(!FIREBASE_READY){
+      syncStatus.textContent = "尚未貼上 Firebase 設定，目前只會存在此瀏覽器。";
+      return;
+    }
+
+    let text = "已連線 Firebase 即時同步";
+    if(monthData.updatedBy){
+      text += `｜最後更新：${monthData.updatedBy}`;
+    }
+    if(monthData.updatedAt?.toDate){
+      const dt = monthData.updatedAt.toDate();
+      text += `｜${dt.toLocaleString("zh-TW", { hour12:false })}`;
+    }
+    syncStatus.textContent = text;
+  }
+
+  function applyBackground(){
+    const capture = document.getElementById("capture");
+    if(!capture) return;
+
+    if(monthData.backgroundUrl){
+      capture.style.backgroundImage = `linear-gradient(rgba(255,253,249,.82), rgba(255,253,249,.88)), url("${monthData.backgroundUrl}")`;
+      capture.style.backgroundSize = "cover";
+      capture.style.backgroundPosition = "center";
+    }else{
+      capture.style.backgroundImage = "";
+    }
+  }
+
+  function render(){
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    titleYearMonth.textContent = `${y}年${m+1}月`;
+    calendar.innerHTML = "";
+
+    weekdays.forEach((w, i) => {
+      const div = document.createElement("div");
+      div.className = "weekday" + (i===0?" sun":"") + (i===6?" sat":"");
+      div.textContent = w;
+      calendar.appendChild(div);
+    });
+
+    const firstDay = new Date(y,m,1).getDay();
+    const days = new Date(y,m+1,0).getDate();
+
+    for(let i=0;i<firstDay;i++){
+      const blank = document.createElement("div");
+      blank.className = "day empty";
+      calendar.appendChild(blank);
+    }
+
+    for(let d=1; d<=days; d++){
+      const dk = dateKey(d);
+      const obj = monthData.days?.[dk] || {};
+      const dow = new Date(y,m,d).getDay();
+      const today = new Date();
+      const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === d;
+
+      const day = document.createElement("div");
+      day.className = "day" + (dow===0?" sun":"") + (dow===6?" sat":"") + (isToday?" today":"");
+      day.dataset.day = d;
+
+      const num = document.createElement("div");
+      num.className = "day-num";
+      num.innerHTML = `<span>${d}</span><small> 星期${weekdays[dow]}</small>`;
+      day.appendChild(num);
+
+      slotOrder.forEach(s => {
+        const slot = document.createElement("div");
+        slot.className = "slot " + s;
+        slot.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          if(document.body.classList.contains("mode-a")){
+            openEditor(dk, s);
+          }
+        });
+
+        const label = document.createElement("div");
+        label.className = "slot-label";
+        label.textContent = slotLabels[s];
+
+        const content = document.createElement("div");
+        content.className = "slot-content";
+
+        const statusKey = deriveSlotStatus(obj, s);
+        const statusTextMap = {
+          available: "可預約",
+          limited: "尚有空間",
+          full: "已額滿",
+          unavailable: "不可預約",
+          closed: "公休"
+        };
+
+        const detail = makeAdminDetail(obj, s);
+        content.innerHTML = `<span class="status-text ${statusKey}">${statusTextMap[statusKey] || "可預約"}</span>${detail ? `<div class="admin-detail">${detail}</div>` : ""}`;
+
+        slot.appendChild(label);
+        slot.appendChild(content);
+        day.appendChild(slot);
+      });
+
+      calendar.appendChild(day);
+    }
+
+    renderSidebars();
+    applyBackground();
+    renderSyncStatus();
+  }
+
+  async function saveMonthPatch(patch){
+    const payload = {
+      ...patch,
+      updatedBy: adminName || "管理者",
+      updatedAt: serverTimestamp()
+    };
+
+    if(FIREBASE_READY){
+      await setDoc(monthRef(), payload, { merge:true });
+    }else{
+      monthData = normalizeMonth({ ...monthData, ...patch, updatedBy: payload.updatedBy, updatedAt: new Date().toISOString() });
+      writeFallback(monthData);
+      render();
+    }
+  }
+
+  async function saveSlotToCloud(dk, slotObj){
+    const nextDay = {
+      ...(monthData.days?.[dk] || {}),
+      ...slotObj
+    };
+
+    const nextDays = {
+      ...(monthData.days || {}),
+      [dk]: nextDay
+    };
+
+    await saveMonthPatch({ days: nextDays });
+  }
+
+  function openEditor(dk, slot){
+    selectedDateKey = dk;
+    selectedSlot = slot;
+    const obj = monthData.days?.[dk] || {};
+    document.getElementById("editorTitle").textContent = `${dk} 編輯`;
+    document.getElementById("editSlot").value = slot;
+    document.getElementById("editSpecial").value = obj[slot + "_special"] || "normal";
+    document.getElementById("editFront39").value = obj[slot + "_front39"] || "";
+    document.getElementById("editBack39").value = obj[slot + "_back39"] || "";
+    document.getElementById("editRoom41").value = obj[slot + "_room41"] || "";
+    document.getElementById("editText").value = obj[slot] || "";
+    document.getElementById("editor").classList.add("show");
+  }
+
+  async function saveEditor(){
+    const slot = document.getElementById("editSlot").value;
+    const txt = document.getElementById("editText").value.trim();
+    const special = document.getElementById("editSpecial").value;
+    const front39 = document.getElementById("editFront39").value.trim();
+    const back39 = document.getElementById("editBack39").value.trim();
+    const room41 = document.getElementById("editRoom41").value.trim();
+
+    const patch = {
+      [slot]: txt,
+      [slot + "_special"]: special,
+      [slot + "_front39"]: front39,
+      [slot + "_back39"]: back39,
+      [slot + "_room41"]: room41
+    };
+
+    await saveSlotToCloud(selectedDateKey, patch);
+    document.getElementById("editor").classList.remove("show");
+  }
+
+  async function clearSlot(){
+    const slot = document.getElementById("editSlot").value;
+    await saveSlotToCloud(selectedDateKey, {
+      [slot]: "",
+      [slot + "_special"]: "normal",
+      [slot + "_front39"]: "",
+      [slot + "_back39"]: "",
+      [slot + "_room41"]: ""
+    });
+
+    document.getElementById("editSpecial").value = "normal";
+    document.getElementById("editFront39").value = "";
+    document.getElementById("editBack39").value = "";
+    document.getElementById("editRoom41").value = "";
+    document.getElementById("editText").value = "";
+  }
+
+  function subscribeMonth(){
+    if(unsubscribeMonth){
+      unsubscribeMonth();
+      unsubscribeMonth = null;
+    }
+
+    if(!FIREBASE_READY){
+      monthData = normalizeMonth(readFallback() || {});
+      render();
+      return;
+    }
+
+    syncStatus.textContent = "資料庫連線中…";
+
+    unsubscribeMonth = onSnapshot(monthRef(), (snap) => {
+      monthData = normalizeMonth(snap.exists() ? snap.data() : {});
+      render();
+    }, (error) => {
+      console.error(error);
+      syncStatus.textContent = "Firebase 讀取失敗，請確認 Firestore 規則與設定。";
+    });
+  }
+
+  function bindEvents(){
+    document.getElementById("modeA").onclick = () => {
+      const pwd = prompt("請輸入管理密碼");
+      if(!pwd) return;
+
+      const ok = ["qianlai","Qianlai","QIANLAI"].includes(pwd.trim());
+
+      if(ok){
+        const name = prompt("你是工作室裡的誰？請輸入你的名稱", adminName || "");
+        if(!name || !name.trim()){
+          alert("請先輸入修改人名稱，方便大家知道最後是誰更新。");
+          return;
+        }
+        adminName = name.trim();
+        localStorage.setItem(STORAGE_PREFIX + "adminName", adminName);
+        setMode("a");
+      }else{
+        alert("密碼錯誤");
+      }
+    };
+
+    document.getElementById("modeB").onclick = () => setMode("b");
+    const identity = document.getElementById("adminIdentity");
+    if(identity){
+      identity.onclick = () => {
+        if(!document.body.classList.contains("mode-a")) return;
+        const name = prompt("你是工作室裡的誰？請輸入你的名稱", adminName || "");
+        if(name && name.trim()){
+          adminName = name.trim();
+          localStorage.setItem(STORAGE_PREFIX + "adminName", adminName);
+          setMode("a");
+        }
+      };
+    }
+    document.getElementById("prevBtn").onclick = () => { current.setMonth(current.getMonth()-1); subscribeMonth(); };
+    document.getElementById("nextBtn").onclick = () => { current.setMonth(current.getMonth()+1); subscribeMonth(); };
+    document.getElementById("closeEditor").onclick = () => document.getElementById("editor").classList.remove("show");
+    document.getElementById("saveEditor").onclick = saveEditor;
+    document.getElementById("clearSlot").onclick = clearSlot;
+
+    document.getElementById("editSlot").onchange = (e) => {
+      selectedSlot = e.target.value;
+      const obj = monthData.days?.[selectedDateKey] || {};
+      document.getElementById("editSpecial").value = obj[selectedSlot + "_special"] || "normal";
+      document.getElementById("editFront39").value = obj[selectedSlot + "_front39"] || "";
+      document.getElementById("editBack39").value = obj[selectedSlot + "_back39"] || "";
+      document.getElementById("editRoom41").value = obj[selectedSlot + "_room41"] || "";
+      document.getElementById("editText").value = obj[selectedSlot] || "";
+    };
+
+    let currentTextEditKey = "";
+
+    document.querySelectorAll("[data-open-edit]").forEach(btn => {
+      btn.onclick = () => {
+        if(!document.body.classList.contains("mode-a")) return;
+
+        currentTextEditKey = btn.dataset.openEdit;
+        const textarea = document.getElementById("textEditorTextarea");
+        const title = document.getElementById("textEditorTitle");
+
+        if(currentTextEditKey === "items_morning"){
+          title.textContent = "編輯上午預約項目";
+          textarea.value = monthData.items.morning;
+        }
+        if(currentTextEditKey === "items_afternoon"){
+          title.textContent = "編輯下午預約項目";
+          textarea.value = monthData.items.afternoon;
+        }
+        if(currentTextEditKey === "items_evening"){
+          title.textContent = "編輯晚上預約項目";
+          textarea.value = monthData.items.evening;
+        }
+        if(currentTextEditKey === "month_notice"){
+          title.textContent = "編輯本月公告";
+          textarea.value = monthData.notice;
+        }
+
+        document.getElementById("textEditorModal").classList.add("show");
+      };
+    });
+
+    document.getElementById("closeTextEditor").onclick = () => {
+      document.getElementById("textEditorModal").classList.remove("show");
+    };
+
+    document.getElementById("saveTextEditor").onclick = async () => {
+      const value = document.getElementById("textEditorTextarea").value;
+
+      if(currentTextEditKey === "items_morning"){
+        await saveMonthPatch({ items:{ ...monthData.items, morning:value } });
+      }
+      if(currentTextEditKey === "items_afternoon"){
+        await saveMonthPatch({ items:{ ...monthData.items, afternoon:value } });
+      }
+      if(currentTextEditKey === "items_evening"){
+        await saveMonthPatch({ items:{ ...monthData.items, evening:value } });
+      }
+      if(currentTextEditKey === "month_notice"){
+        await saveMonthPatch({ notice:value });
+      }
+
+      document.getElementById("textEditorModal").classList.remove("show");
+    };
+
+    document.getElementById("exportBtn").onclick = async () => {
+      document.getElementById("editor").classList.remove("show");
+
+      const capture = document.getElementById("capture");
+      const originalWidth = capture.style.width;
+      const originalMinWidth = capture.style.minWidth;
+
+      capture.style.width = "1400px";
+      capture.style.minWidth = "1400px";
+
+      const canvas = await html2canvas(capture, {
+        scale: 2,
+        backgroundColor: "#fffaf6",
+        windowWidth: 1400,
+        scrollX: 0,
+        scrollY: 0,
+        ignoreElements: (el) => el.classList && el.classList.contains("no-capture")
+      });
+
+      capture.style.width = originalWidth;
+      capture.style.minWidth = originalMinWidth;
+
+      const a = document.createElement("a");
+      a.download = `${ymKey()}-空間使用紀錄.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+  }
+
+  bindEvents();
+  setMode("b");
+  subscribeMonth();
+})();
+</script>
+
+</body>
+</html>

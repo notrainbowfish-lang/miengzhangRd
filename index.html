@@ -1768,6 +1768,7 @@ select option[disabled]{
         <option value="morning">上午</option>
         <option value="afternoon">下午</option>
         <option value="evening">晚上</option>
+        <option value="allDay">整天</option>
       </select>
     </div>
     <div class="row">
@@ -1779,14 +1780,8 @@ select option[disabled]{
       </select>
     </div>
     <div class="row">
-      <label>登記來源</label>
-      <select id="editSource">
-        <option value="">系統／不顯示來源</option>
-        <option value="京采">京采</option>
-        <option value="妘紜">妘紜</option>
-        <option value="藏光">藏光</option>
-        <option value="其他共享">其他共享</option>
-      </select>
+      <label>登記來源（系統自動判斷）</label>
+      <input id="editSource" readonly />
     </div>
     <div class="row">
       <label>聯繫人（其他共享必填）</label>
@@ -1797,45 +1792,17 @@ select option[disabled]{
       <input id="editContactInfo" placeholder="電話／LINE／IG">
     </div>
     <div class="row">
-      <label>匯款狀態</label>
-      <select id="editPayment">
-        <option value="unpaid">未匯款／空間預訂中</option>
-        <option value="paid">已匯款／預約成功</option>
-        <option value="cancelled">逾期未匯款／已取消</option>
-      </select>
+      <label><input type="checkbox" id="editPayment" /> 已匯款／預約成功</label>
+      <div class="hint">未勾選＝空間預訂中；預約日前兩天未匯款會自動取消。</div>
     </div>
     <div class="row">
-      <label>39前（最多 3 筆，用、分隔；填用途）</label>
-      <input id="editFront39" placeholder="例如：煥顏、牌卡、療癒" />
+      <label><input type="checkbox" id="editFront39Private" /> 39前私密使用（鎖定整個空間）</label>
     </div>
     <div class="row">
-      <label>39前是否私密</label>
-      <select id="editFront39Private">
-        <option value="no">不需要</option>
-        <option value="yes">需要，39前此時段上限鎖為 1 筆</option>
-      </select>
+      <label><input type="checkbox" id="editBack39Private" /> 39後私密使用（鎖定整個空間）</label>
     </div>
     <div class="row">
-      <label>39後（最多 1 筆；填用途）</label>
-      <input id="editBack39" placeholder="例如：身體" />
-    </div>
-    <div class="row">
-      <label>39後是否私密</label>
-      <select id="editBack39Private">
-        <option value="no">不需要</option>
-        <option value="yes">需要，39後此時段上限鎖為 1 筆</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>41（最多 1 筆；填用途）</label>
-      <input id="editRoom41" placeholder="例如：課程" />
-    </div>
-    <div class="row">
-      <label>41 是否私密</label>
-      <select id="editRoom41Private">
-        <option value="no">不需要</option>
-        <option value="yes">需要，41 此時段上限鎖為 1 筆</option>
-      </select>
+      <label><input type="checkbox" id="editRoom41Private" /> 41私密使用（鎖定整個空間）</label>
     </div>
     <div class="row">
       <label>內部備註（可不填）</label>
@@ -1981,6 +1948,19 @@ import {
       .filter(Boolean);
   }
 
+  function detectSource(front39, back39, room41, contactName){
+    if(contactName) return "其他共享";
+
+    const text = `${front39} ${back39} ${room41}`;
+
+    if(text.includes("妘")) return "妘紜";
+    if(text.includes("藏")) return "藏光";
+    if(text.includes("京")) return "京采";
+
+    return "內部";
+  }
+
+
   function spaceCapacity(obj, slot, spaceKey){
     const privateFlag = obj?.[slot + "_" + spaceKey + "_private"] === true || obj?.[slot + "_" + spaceKey + "_private"] === "yes";
     if(privateFlag) return 1;
@@ -2030,34 +2010,27 @@ import {
 
   function makeAdminDetail(obj, slot){
     const rows = [];
-    const source = obj?.[slot + "_source"] || "";
-    const payment = obj?.[slot + "_payment"] || "paid";
-    const note = obj?.[slot] || "";
-
-    const prefix = source ? source + "｜" : "";
-    let paymentLabel = "";
-    if(payment === "unpaid") paymentLabel = "｜未匯款";
-    if(payment === "cancelled") paymentLabel = "｜已取消";
 
     function rowFor(spaceKey, label){
       const raw = obj?.[slot + "_" + spaceKey] || "";
       const list = splitPeople(raw);
+
+      if(list.some(x => x.includes("整天"))){
+        return `${label}｜整天使用`;
+      }
+
       const cap = spaceCapacity(obj, slot, spaceKey);
-      const isPrivate = obj?.[slot + "_" + spaceKey + "_private"] === true || obj?.[slot + "_" + spaceKey + "_private"] === "yes";
-      const privacy = isPrivate ? "🔒" : "";
 
       if(list.length){
-        return `${label}｜${privacy}${prefix}${list.join("、")}${paymentLabel}｜${list.length}/${cap}`;
+        return `${label}｜${list.join("、")}｜${list.length}/${cap}`;
       }
 
       return `${label}｜空｜0/${cap}`;
     }
 
-    rows.push(rowFor("front39", "39前"));
-    rows.push(rowFor("back39", "39後"));
-    rows.push(rowFor("room41", "41"));
-
-    if(note) rows.push("備註｜" + note);
+    rows.push(rowFor("front39","39前"));
+    rows.push(rowFor("back39","39後"));
+    rows.push(rowFor("room41","41"));
 
     return rows.join("<br>");
   }
@@ -2275,51 +2248,62 @@ import {
     document.getElementById("editSource").value = obj[slot + "_source"] || "";
     document.getElementById("editContactName").value = obj[slot + "_contactName"] || "";
     document.getElementById("editContactInfo").value = obj[slot + "_contactInfo"] || "";
-    document.getElementById("editPayment").value = obj[slot + "_payment"] || "paid";
+    document.getElementById("editPayment").checked = (obj[slot + "_payment"] || "unpaid") === "paid";
     document.getElementById("editFront39").value = obj[slot + "_front39"] || "";
-    document.getElementById("editFront39Private").value = (obj[slot + "_front39_private"] === true || obj[slot + "_front39_private"] === "yes") ? "yes" : "no";
+    document.getElementById("editFront39Private").checked = (obj[slot + "_front39_private"] === true || obj[slot + "_front39_private"] === "yes");
     document.getElementById("editBack39").value = obj[slot + "_back39"] || "";
-    document.getElementById("editBack39Private").value = (obj[slot + "_back39_private"] === true || obj[slot + "_back39_private"] === "yes") ? "yes" : "no";
+    document.getElementById("editBack39Private").checked = (obj[slot + "_back39_private"] === true || obj[slot + "_back39_private"] === "yes");
     document.getElementById("editRoom41").value = obj[slot + "_room41"] || "";
-    document.getElementById("editRoom41Private").value = (obj[slot + "_room41_private"] === true || obj[slot + "_room41_private"] === "yes") ? "yes" : "no";
+    document.getElementById("editRoom41Private").checked = (obj[slot + "_room41_private"] === true || obj[slot + "_room41_private"] === "yes");
     document.getElementById("editText").value = obj[slot] || "";
     document.getElementById("editor").classList.add("show");
   }
 
-  async function saveEditor(){
+  async async function saveEditor(){
     const slot = document.getElementById("editSlot").value;
     const txt = document.getElementById("editText").value.trim();
     const special = document.getElementById("editSpecial").value;
-    const source = document.getElementById("editSource").value;
+
     const contactName = document.getElementById("editContactName").value.trim();
     const contactInfo = document.getElementById("editContactInfo").value.trim();
-    const payment = document.getElementById("editPayment").value;
+
+    const payment = document.getElementById("editPayment").checked ? "paid" : "unpaid";
+
     const front39 = document.getElementById("editFront39").value.trim();
-    const front39Private = document.getElementById("editFront39Private").value;
+    const front39Private = document.getElementById("editFront39Private").checked ? "yes" : "no";
+
     const back39 = document.getElementById("editBack39").value.trim();
-    const back39Private = document.getElementById("editBack39Private").value;
+    const back39Private = document.getElementById("editBack39Private").checked ? "yes" : "no";
+
     const room41 = document.getElementById("editRoom41").value.trim();
-    const room41Private = document.getElementById("editRoom41Private").value;
+    const room41Private = document.getElementById("editRoom41Private").checked ? "yes" : "no";
 
-    if(source === "其他共享" && (!contactName || !contactInfo)){
-      alert("其他共享請填寫聯繫人與聯繫資料。");
-      return;
-    }
+    const source = detectSource(front39, back39, room41, contactName);
+    document.getElementById("editSource").value = source;
 
-    const patch = {
-      [slot]: txt,
-      [slot + "_special"]: special,
-      [slot + "_source"]: source,
-      [slot + "_contactName"]: contactName,
-      [slot + "_contactInfo"]: contactInfo,
-      [slot + "_payment"]: payment,
-      [slot + "_front39"]: front39,
-      [slot + "_front39_private"]: front39Private,
-      [slot + "_back39"]: back39,
-      [slot + "_back39_private"]: back39Private,
-      [slot + "_room41"]: room41,
-      [slot + "_room41_private"]: room41Private
-    };
+    const slotsToSave = slot === "allDay"
+      ? ["morning","afternoon","evening"]
+      : [slot];
+
+    const patch = {};
+
+    slotsToSave.forEach(targetSlot => {
+      patch[targetSlot] = txt;
+      patch[targetSlot + "_special"] = special;
+      patch[targetSlot + "_source"] = source;
+      patch[targetSlot + "_contactName"] = contactName;
+      patch[targetSlot + "_contactInfo"] = contactInfo;
+      patch[targetSlot + "_payment"] = payment;
+
+      patch[targetSlot + "_front39"] = front39 ? (slot === "allDay" ? front39 + "（整天）" : front39) : "";
+      patch[targetSlot + "_front39_private"] = front39Private;
+
+      patch[targetSlot + "_back39"] = back39 ? (slot === "allDay" ? back39 + "（整天）" : back39) : "";
+      patch[targetSlot + "_back39_private"] = back39Private;
+
+      patch[targetSlot + "_room41"] = room41 ? (slot === "allDay" ? room41 + "（整天）" : room41) : "";
+      patch[targetSlot + "_room41_private"] = room41Private;
+    });
 
     await saveSlotToCloud(selectedDateKey, patch);
     document.getElementById("editor").classList.remove("show");
@@ -2346,13 +2330,13 @@ import {
     document.getElementById("editSource").value = "";
     document.getElementById("editContactName").value = "";
     document.getElementById("editContactInfo").value = "";
-    document.getElementById("editPayment").value = "paid";
+    document.getElementById("editPayment").checked = false;
     document.getElementById("editFront39").value = "";
-    document.getElementById("editFront39Private").value = "no";
+    document.getElementById("editFront39Private").checked = false;
     document.getElementById("editBack39").value = "";
-    document.getElementById("editBack39Private").value = "no";
+    document.getElementById("editBack39Private").checked = false;
     document.getElementById("editRoom41").value = "";
-    document.getElementById("editRoom41Private").value = "no";
+    document.getElementById("editRoom41Private").checked = false;
     document.getElementById("editText").value = "";
   }
 
@@ -2854,11 +2838,11 @@ import {
       document.getElementById("editContactInfo").value = obj[selectedSlot + "_contactInfo"] || "";
       document.getElementById("editPayment").value = obj[selectedSlot + "_payment"] || "paid";
       document.getElementById("editFront39").value = obj[selectedSlot + "_front39"] || "";
-      document.getElementById("editFront39Private").value = (obj[selectedSlot + "_front39_private"] === true || obj[selectedSlot + "_front39_private"] === "yes") ? "yes" : "no";
+      document.getElementById("editFront39Private").checked = (obj[selectedSlot + "_front39_private"] === true || obj[selectedSlot + "_front39_private"] === "yes");
       document.getElementById("editBack39").value = obj[selectedSlot + "_back39"] || "";
-      document.getElementById("editBack39Private").value = (obj[selectedSlot + "_back39_private"] === true || obj[selectedSlot + "_back39_private"] === "yes") ? "yes" : "no";
+      document.getElementById("editBack39Private").checked = (obj[selectedSlot + "_back39_private"] === true || obj[selectedSlot + "_back39_private"] === "yes");
       document.getElementById("editRoom41").value = obj[selectedSlot + "_room41"] || "";
-      document.getElementById("editRoom41Private").value = (obj[selectedSlot + "_room41_private"] === true || obj[selectedSlot + "_room41_private"] === "yes") ? "yes" : "no";
+      document.getElementById("editRoom41Private").checked = (obj[selectedSlot + "_room41_private"] === true || obj[selectedSlot + "_room41_private"] === "yes");
       document.getElementById("editText").value = obj[selectedSlot] || "";
     };
 

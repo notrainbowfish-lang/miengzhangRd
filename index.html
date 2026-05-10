@@ -1527,11 +1527,11 @@ h1{
       <h3 id="externalRegisterTitle">外部共享空間登記</h3>
       <div class="row">
         <label>日期</label>
-        <input id="externalDate" readonly>
+        <select id="externalDate"></select>
       </div>
       <div class="row">
         <label>時段</label>
-        <input id="externalSlot" readonly>
+        <select id="externalSlot"></select>
       </div>
       <div class="row">
         <label>使用空間</label>
@@ -2187,6 +2187,12 @@ import {
 
   function availableSpacesForSlot(dk, slot){
     const obj = monthData.days?.[dk] || {};
+    const statusKey = deriveSlotStatus(obj, slot);
+
+    if(statusKey === "full" || statusKey === "unavailable" || statusKey === "closed"){
+      return [];
+    }
+
     const spaces = [];
     if(!isSpaceFull(obj, slot, "front39")) spaces.push("front39");
     if(!isSpaceFull(obj, slot, "back39")) spaces.push("back39");
@@ -2194,41 +2200,103 @@ import {
     return spaces;
   }
 
-  function openExternalRegister(dk, slot){
-    const obj = monthData.days?.[dk] || {};
-    const statusKey = deriveSlotStatus(obj, slot);
+  function getAvailableDateSlotMap(){
+    const map = {};
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    const days = new Date(y, m + 1, 0).getDate();
 
-    if(statusKey === "full" || statusKey === "unavailable" || statusKey === "closed"){
-      return;
+    for(let d = 1; d <= days; d++){
+      const dk = dateKey(d);
+      slotOrder.forEach(slot => {
+        if(availableSpacesForSlot(dk, slot).length > 0){
+          if(!map[dk]) map[dk] = [];
+          map[dk].push(slot);
+        }
+      });
     }
 
-    externalDateKey = dk;
-    externalSlotKey = slot;
+    return map;
+  }
 
+  function renderExternalSlotsAndSpaces(){
+    const dateSelect = document.getElementById("externalDate");
+    const slotSelect = document.getElementById("externalSlot");
     const spaceSelect = document.getElementById("externalSpace");
-    const available = availableSpacesForSlot(dk, slot);
+    const map = getAvailableDateSlotMap();
+
+    const selectedDate = dateSelect.value;
+    const availableSlots = map[selectedDate] || [];
+
+    slotSelect.innerHTML = "";
+    availableSlots.forEach(slot => {
+      const opt = document.createElement("option");
+      opt.value = slot;
+      opt.textContent = slotLabels[slot];
+      slotSelect.appendChild(opt);
+    });
+
+    if(availableSlots.includes(externalSlotKey)){
+      slotSelect.value = externalSlotKey;
+    }else if(availableSlots.length){
+      slotSelect.value = availableSlots[0];
+    }
+
+    externalSlotKey = slotSelect.value;
+
+    const availableSpaces = availableSpacesForSlot(selectedDate, externalSlotKey);
+    const labels = {front39:"39前", back39:"39後", room41:"41"};
 
     spaceSelect.innerHTML = "";
-    const labels = {front39:"39前", back39:"39後", room41:"41"};
-    available.forEach(space => {
+    availableSpaces.forEach(space => {
       const opt = document.createElement("option");
       opt.value = space;
       opt.textContent = labels[space];
       spaceSelect.appendChild(opt);
     });
+  }
 
-    if(available.length === 0){
-      alert("此時段空間已滿，無法登記。");
+  function openExternalRegister(dk, slot){
+    const map = getAvailableDateSlotMap();
+    const dateKeys = Object.keys(map).sort();
+
+    if(dateKeys.length === 0){
+      alert("目前沒有可登記的空間時段。");
       return;
     }
 
-    document.getElementById("externalDate").value = dk;
-    document.getElementById("externalSlot").value = slotLabels[slot];
+    externalDateKey = map[dk] ? dk : dateKeys[0];
+    externalSlotKey = (map[externalDateKey] || []).includes(slot) ? slot : map[externalDateKey][0];
+
+    const dateSelect = document.getElementById("externalDate");
+    dateSelect.innerHTML = "";
+
+    dateKeys.forEach(date => {
+      const opt = document.createElement("option");
+      opt.value = date;
+      opt.textContent = date;
+      dateSelect.appendChild(opt);
+    });
+
+    dateSelect.value = externalDateKey;
+    renderExternalSlotsAndSpaces();
+
     document.getElementById("externalPurpose").value = "";
     document.getElementById("externalPrivate").value = "no";
     document.getElementById("externalContactName").value = "";
     document.getElementById("externalContactInfo").value = "";
     document.getElementById("externalNote").value = "";
+
+    document.getElementById("externalDate").onchange = () => {
+      externalDateKey = document.getElementById("externalDate").value;
+      externalSlotKey = (getAvailableDateSlotMap()[externalDateKey] || [])[0] || "";
+      renderExternalSlotsAndSpaces();
+    };
+
+    document.getElementById("externalSlot").onchange = () => {
+      externalSlotKey = document.getElementById("externalSlot").value;
+      renderExternalSlotsAndSpaces();
+    };
 
     document.getElementById("externalRegisterModal").classList.add("show");
   }
@@ -2238,12 +2306,20 @@ import {
   }
 
   async function saveExternalRegister(){
+    externalDateKey = document.getElementById("externalDate").value;
+    externalSlotKey = document.getElementById("externalSlot").value;
+
     const space = document.getElementById("externalSpace").value;
     const purpose = document.getElementById("externalPurpose").value.trim();
     const privateSpace = document.getElementById("externalPrivate").value;
     const contactName = document.getElementById("externalContactName").value.trim();
     const contactInfo = document.getElementById("externalContactInfo").value.trim();
     const note = document.getElementById("externalNote").value.trim();
+
+    if(!externalDateKey || !externalSlotKey || !space){
+      alert("請選擇可登記的日期、時段與空間。");
+      return;
+    }
 
     if(!purpose){
       alert("請填寫用途。");
@@ -2256,8 +2332,8 @@ import {
     }
 
     const obj = monthData.days?.[externalDateKey] || {};
-    if(isSpaceFull(obj, externalSlotKey, space)){
-      alert("此空間已滿，請重新選擇其他時段或空間。");
+    if(availableSpacesForSlot(externalDateKey, externalSlotKey).length === 0 || isSpaceFull(obj, externalSlotKey, space)){
+      alert("此空間或時段已滿，請重新選擇其他日期、時段或空間。");
       closeExternalRegister();
       return;
     }

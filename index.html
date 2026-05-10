@@ -1591,6 +1591,18 @@ h1{
 }
 </style>
 
+
+<style>
+/* v38 strict availability */
+.mini-day.red{
+  text-decoration:line-through;
+}
+select option[disabled]{
+  color:#aaa;
+  text-decoration:line-through;
+}
+</style>
+
 </head>
 <body>
   <div class="app">
@@ -1673,6 +1685,13 @@ h1{
       <div class="row">
         <label>時段</label>
         <select id="externalSlot"></select>
+      </div>
+      <div class="row">
+        <label>顯示方式</label>
+        <select id="externalOnlyEmpty">
+          <option value="yes">只顯示完全未使用的時段</option>
+          <option value="no">可多人使用的空間也顯示</option>
+        </select>
       </div>
       <div class="row">
         <label>使用空間</label>
@@ -1958,6 +1977,13 @@ import {
   function isSpaceFull(obj, slot, spaceKey){
     const list = splitPeople(obj?.[slot + "_" + spaceKey]);
     return list.length >= spaceCapacity(obj, slot, spaceKey);
+  }
+
+  function isSlotCompletelyEmpty(obj, slot){
+    return splitPeople(obj?.[slot + "_front39"]).length === 0
+      && splitPeople(obj?.[slot + "_back39"]).length === 0
+      && splitPeople(obj?.[slot + "_room41"]).length === 0
+      && (obj?.[slot + "_special"] || "normal") === "normal";
   }
 
   function hasUnpaid(obj, slot){
@@ -2380,14 +2406,21 @@ import {
 
     for(let d = 1; d <= days; d++){
       const dk = dateKeyFromExternalMonth(d);
+      const onlyEmptyEl = document.getElementById("externalOnlyEmpty");
+      const onlyEmpty = !onlyEmptyEl || onlyEmptyEl.value !== "no";
+      const obj = monthData.days?.[dk] || {};
+
       slotOrder.forEach(slot => {
-        if(availableSpacesForSlot(dk, slot).length > 0){
+        const canUse = availableSpacesForSlot(dk, slot).length > 0;
+        const shouldShow = onlyEmpty ? (canUse && isSlotCompletelyEmpty(obj, slot)) : canUse;
+
+        if(shouldShow){
           if(!map[dk]) map[dk] = [];
           map[dk].push(slot);
         }
       });
 
-      if(availableSpacesForAllDay(dk).length > 0){
+      if(!onlyEmpty && availableSpacesForAllDay(dk).length > 0){
         if(!map[dk]) map[dk] = [];
         map[dk].push("allDay");
       }
@@ -2408,6 +2441,18 @@ import {
     const count = availableSpaceCountForDate(dk);
     if(count <= 0) return "red";
     if(count <= 3) return "orange";
+    return "green";
+  }
+
+  function externalVisibleSlotCountForDate(dk){
+    const map = getAvailableDateSlotMap();
+    return (map[dk] || []).filter(slot => slot !== "allDay").length;
+  }
+
+  function externalLevelForDate(dk){
+    const visible = externalVisibleSlotCountForDate(dk);
+    if(visible <= 0) return "red";
+    if(visible <= 1) return "orange";
     return "green";
   }
 
@@ -2441,8 +2486,8 @@ import {
 
     for(let d = 1; d <= days; d++){
       const dk = dateKey(d);
-      const count = availableSpaceCountForDate(dk);
-      const level = availableLevelForDate(dk);
+      const count = externalVisibleSlotCountForDate(dk);
+      const level = externalLevelForDate(dk);
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -2521,8 +2566,8 @@ import {
     const availableSlots = map[selectedDate] || [];
     const availabilityHint = document.getElementById("externalAvailabilityHint");
     if(availabilityHint){
-      const count = availableSpaceCountForDate(selectedDate);
-      availabilityHint.textContent = selectedDate ? `當日剩餘可登記空間數：約 ${count} 格` : "";
+      const count = externalVisibleSlotCountForDate(selectedDate);
+      availabilityHint.textContent = selectedDate ? `當日可選時段數：${count} 個` : "";
     }
 
     slotSelect.innerHTML = "";
@@ -2580,6 +2625,7 @@ import {
 
     rebuildExternalDateOptions();
 
+    document.getElementById("externalOnlyEmpty").value = mode === "contract" ? "no" : "yes";
     document.getElementById("externalPurpose").value = "";
     document.getElementById("externalPrivate").value = "no";
     document.getElementById("externalContactName").value = "";
@@ -2595,6 +2641,10 @@ import {
     document.getElementById("externalSlot").onchange = () => {
       externalSlotKey = document.getElementById("externalSlot").value;
       renderExternalSlotsAndSpaces();
+    };
+
+    document.getElementById("externalOnlyEmpty").onchange = () => {
+      rebuildExternalDateOptions();
     };
 
     document.getElementById("miniPrevMonth").onclick = () => {

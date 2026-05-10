@@ -1463,6 +1463,76 @@ h1{
 
 </style>
 
+
+<style>
+/* v34 external mini calendar */
+.mini-calendar{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+  margin-top:6px;
+}
+.mini-weekday{
+  text-align:center;
+  font-size:12px;
+  color:#9a7b6f;
+  padding:2px 0;
+}
+.mini-day{
+  border:1px solid #ead9cd;
+  border-radius:10px;
+  padding:8px 0;
+  text-align:center;
+  font-size:14px;
+  background:#fffdf9;
+  cursor:pointer;
+  font-family:inherit;
+  color:#4b3128;
+}
+.mini-day.empty{
+  visibility:hidden;
+}
+.mini-day.green{
+  background:#dff0d7;
+  color:#456f3c;
+  border-color:rgba(69,111,60,.25);
+}
+.mini-day.orange{
+  background:#ffe5bd;
+  color:#98611c;
+  border-color:rgba(152,97,28,.24);
+}
+.mini-day.red{
+  background:#ffd8d8;
+  color:#a64747;
+  border-color:rgba(166,71,71,.22);
+  cursor:not-allowed;
+}
+.mini-day.selected{
+  outline:3px solid rgba(75,49,40,.24);
+  font-weight:800;
+}
+.mini-calendar-legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
+  font-size:12px;
+  color:#8a6f64;
+}
+.mini-dot{
+  display:inline-block;
+  width:11px;
+  height:11px;
+  border-radius:4px;
+  margin-right:4px;
+  vertical-align:-1px;
+}
+.mini-green{background:#dff0d7}
+.mini-orange{background:#ffe5bd}
+.mini-red{background:#ffd8d8}
+</style>
+
 </head>
 <body>
   <div class="app">
@@ -1527,7 +1597,13 @@ h1{
       <h3 id="externalRegisterTitle">外部共享空間登記</h3>
       <div class="row">
         <label>日期</label>
-        <select id="externalDate"></select>
+        <select id="externalDate" style="display:none"></select>
+        <div class="mini-calendar" id="externalMiniCalendar"></div>
+        <div class="mini-calendar-legend">
+          <span><i class="mini-dot mini-green"></i>有空間</span>
+          <span><i class="mini-dot mini-orange"></i>空間不多</span>
+          <span><i class="mini-dot mini-red"></i>無空間</span>
+        </div>
       </div>
       <div class="row">
         <label>時段</label>
@@ -2219,6 +2295,76 @@ import {
     return map;
   }
 
+  function availableSpaceCountForDate(dk){
+    let count = 0;
+    slotOrder.forEach(slot => {
+      count += availableSpacesForSlot(dk, slot).length;
+    });
+    return count;
+  }
+
+  function renderExternalMiniCalendar(){
+    const mini = document.getElementById("externalMiniCalendar");
+    const dateSelect = document.getElementById("externalDate");
+    if(!mini || !dateSelect) return;
+
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    const firstDay = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    const weekNames = ["日","一","二","三","四","五","六"];
+
+    mini.innerHTML = "";
+
+    weekNames.forEach(w => {
+      const el = document.createElement("div");
+      el.className = "mini-weekday";
+      el.textContent = w;
+      mini.appendChild(el);
+    });
+
+    for(let i = 0; i < firstDay; i++){
+      const blank = document.createElement("div");
+      blank.className = "mini-day empty";
+      mini.appendChild(blank);
+    }
+
+    for(let d = 1; d <= days; d++){
+      const dk = dateKey(d);
+      const count = availableSpaceCountForDate(dk);
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mini-day";
+      btn.textContent = d;
+
+      if(count <= 0){
+        btn.classList.add("red");
+        btn.disabled = true;
+      }else if(count <= 2){
+        btn.classList.add("orange");
+      }else{
+        btn.classList.add("green");
+      }
+
+      if(dateSelect.value === dk){
+        btn.classList.add("selected");
+      }
+
+      btn.onclick = () => {
+        if(count <= 0) return;
+
+        dateSelect.value = dk;
+        externalDateKey = dk;
+        externalSlotKey = (getAvailableDateSlotMap()[externalDateKey] || [])[0] || "";
+        renderExternalSlotsAndSpaces();
+        renderExternalMiniCalendar();
+      };
+
+      mini.appendChild(btn);
+    }
+  }
+
   function renderExternalSlotsAndSpaces(){
     const dateSelect = document.getElementById("externalDate");
     const slotSelect = document.getElementById("externalSlot");
@@ -2254,6 +2400,8 @@ import {
       opt.textContent = labels[space];
       spaceSelect.appendChild(opt);
     });
+
+    renderExternalMiniCalendar();
   }
 
   function openExternalRegister(dk, slot){

@@ -449,7 +449,13 @@
       }
     }
 
-  </style>
+  
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
+</style>
 
 <style>
   .day-num small{
@@ -607,6 +613,12 @@
       overflow:auto;
     }
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -713,6 +725,12 @@
       min-width:672px;
     }
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -940,6 +958,12 @@
       min-height:76px !important;
     }
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -958,6 +982,12 @@
     font-weight:700;
     letter-spacing:.04em;
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1053,6 +1083,12 @@
       flex-wrap:wrap !important;
     }
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1104,6 +1140,12 @@ h1{
     width:auto !important;
   }
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1120,6 +1162,12 @@ h1{
   .status-text.unavailable{
     color:#d85c5c !important; /* 不可預約：紅色 */
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1182,6 +1230,12 @@ h1{
     flex-wrap:wrap !important;
   }
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1225,6 +1279,12 @@ h1{
 .mode-b .slot{
   cursor:default !important;
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1255,6 +1315,12 @@ h1{
 .mode-a .admin-edit:focus{
   outline:2px solid rgba(216,138,29,.25);
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1280,6 +1346,12 @@ h1{
   content:"點這裡填寫內容";
   color:#b49a8f;
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1293,6 +1365,12 @@ h1{
   .mode-b .admin-identity{
     display:none;
   }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
@@ -1338,12 +1416,23 @@ h1{
   font-size:16px;
   line-height:1.8;
 }
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
 
 
 <style>
-/* v30 shared studio core */
-.mode-b .slot{cursor:default !important;}
+/* v31 shared studio payment + external register */
+.mode-b .slot{cursor:pointer !important;}
+.mode-b .slot.status-block-full,
+.mode-b .slot.status-block-unavailable,
+.mode-b .slot.status-block-closed{
+  cursor:default !important;
+}
 .slot.status-block-full{
   background:#ffd8d8 !important;
   border:1px solid rgba(166,71,71,.28) !important;
@@ -1352,7 +1441,28 @@ h1{
   color:#a64747 !important;
   font-weight:800 !important;
 }
+.slot.status-block-unpaid{
+  background:#efe0d5 !important;
+  border:1px solid rgba(150,105,80,.25) !important;
+}
+.payment-badge{
+  display:inline-block;
+  margin-left:4px;
+  font-size:10px;
+  color:#9a6a4f;
+}
+.private-badge{
+  font-size:10px;
+  color:#8b4f13;
+}
+
+.slot.status-block-cancelled{
+  opacity:.55 !important;
+  filter:grayscale(.2);
+}
+
 </style>
+
 </head>
 <body>
   <div class="app">
@@ -1377,7 +1487,7 @@ h1{
 
       <div class="content">
         <main>          <div class="calendar" id="calendar"></div>
-          <div class="quote" >＊ 若有臨時調整，請以最新公告為主，感謝您的理解與配合。＊</div><div id="syncStatus" class="quote no-capture">尚未連線資料庫</div>
+          <div class="quote" >＊ 此頁可查看共享空間狀態；外部共享登記需填寫聯繫人與聯繫資料。＊</div><div id="syncStatus" class="quote no-capture">尚未連線資料庫</div>
         </main>
 
         <aside>
@@ -1408,6 +1518,60 @@ h1{
         </aside>
       </div>
     </section>
+  </div>
+
+
+
+  <div class="text-editor-modal no-capture" id="externalRegisterModal">
+    <div class="text-editor-box">
+      <h3 id="externalRegisterTitle">外部共享空間登記</h3>
+      <div class="row">
+        <label>日期</label>
+        <input id="externalDate" readonly>
+      </div>
+      <div class="row">
+        <label>時段</label>
+        <input id="externalSlot" readonly>
+      </div>
+      <div class="row">
+        <label>使用空間</label>
+        <select id="externalSpace">
+          <option value="front39">39前</option>
+          <option value="back39">39後</option>
+          <option value="room41">41</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>用途</label>
+        <input id="externalPurpose" placeholder="例：煥顏、身體、牌卡、療癒、課程">
+      </div>
+      <div class="row">
+        <label>是否需要私密空間</label>
+        <select id="externalPrivate">
+          <option value="no">不需要</option>
+          <option value="yes">需要，此空間同時段僅保留此登記</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>聯繫人</label>
+        <input id="externalContactName" placeholder="請填寫聯繫人姓名">
+      </div>
+      <div class="row">
+        <label>聯繫資料</label>
+        <input id="externalContactInfo" placeholder="請填寫電話／LINE／IG">
+      </div>
+      <div class="row">
+        <label>備註（可不填）</label>
+        <textarea id="externalNote" placeholder="例如：器材需求、課程人數、特殊需求"></textarea>
+      </div>
+      <div class="hint">
+        送出後會先標記為「未匯款／空間預訂中」。後台確認匯款後才算預約成功；預約日前兩天未匯款會自動取消。
+      </div>
+      <div class="editor-actions">
+        <button id="closeExternalRegister">取消</button>
+        <button id="saveExternalRegister">送出登記</button>
+      </div>
+    </div>
   </div>
 
 
@@ -1443,7 +1607,7 @@ h1{
     <div class="row">
       <label>登記來源</label>
       <select id="editSource">
-        <option value="">不顯示來源</option>
+        <option value="">系統／不顯示來源</option>
         <option value="京采">京采</option>
         <option value="妘紜">妘紜</option>
         <option value="藏光">藏光</option>
@@ -1451,10 +1615,19 @@ h1{
       </select>
     </div>
     <div class="row">
-      <label>私密空間</label>
-      <select id="editPrivate">
-        <option value="no">不需要</option>
-        <option value="yes">需要，整個時段只保留此登記</option>
+      <label>聯繫人（其他共享必填）</label>
+      <input id="editContactName" placeholder="其他共享請填寫聯繫人">
+    </div>
+    <div class="row">
+      <label>聯繫資料（其他共享必填）</label>
+      <input id="editContactInfo" placeholder="電話／LINE／IG">
+    </div>
+    <div class="row">
+      <label>匯款狀態</label>
+      <select id="editPayment">
+        <option value="unpaid">未匯款／空間預訂中</option>
+        <option value="paid">已匯款／預約成功</option>
+        <option value="cancelled">逾期未匯款／已取消</option>
       </select>
     </div>
     <div class="row">
@@ -1462,19 +1635,40 @@ h1{
       <input id="editFront39" placeholder="例如：煥顏、牌卡、療癒" />
     </div>
     <div class="row">
+      <label>39前是否私密</label>
+      <select id="editFront39Private">
+        <option value="no">不需要</option>
+        <option value="yes">需要，39前此時段上限鎖為 1 筆</option>
+      </select>
+    </div>
+    <div class="row">
       <label>39後（最多 1 筆；填用途）</label>
       <input id="editBack39" placeholder="例如：身體" />
+    </div>
+    <div class="row">
+      <label>39後是否私密</label>
+      <select id="editBack39Private">
+        <option value="no">不需要</option>
+        <option value="yes">需要，39後此時段上限鎖為 1 筆</option>
+      </select>
     </div>
     <div class="row">
       <label>41（最多 1 筆；填用途）</label>
       <input id="editRoom41" placeholder="例如：課程" />
     </div>
     <div class="row">
+      <label>41 是否私密</label>
+      <select id="editRoom41Private">
+        <option value="no">不需要</option>
+        <option value="yes">需要，41 此時段上限鎖為 1 筆</option>
+      </select>
+    </div>
+    <div class="row">
       <label>內部備註（可不填）</label>
       <textarea id="editText" placeholder="例如：團體課程、包場、老師外出"></textarea>
     </div>
     <div class="hint">
-      A 管理模式登記空間用途與來源；B 查看模式只顯示系統自動判斷後的「可使用／已滿／不可使用／公休」。若選擇私密空間，該時段會直接視為已滿。
+      前台外部共享可直接登記，但會先標示「未匯款」。只有後台改為已匯款才算預約成功。預約日前兩天未匯款會自動取消。私密空間只鎖定該空間容量，不會鎖整個時段。
     </div>
     <div class="editor-actions">
       <button id="closeEditor">取消</button>
@@ -1603,20 +1797,43 @@ import {
     return String(text).split(/[、,，\/＋+]/).map(x => x.trim()).filter(Boolean);
   }
 
+  function spaceCapacity(obj, slot, spaceKey){
+    const privateFlag = obj?.[slot + "_" + spaceKey + "_private"] === true || obj?.[slot + "_" + spaceKey + "_private"] === "yes";
+    if(privateFlag) return 1;
+    if(spaceKey === "front39") return 3;
+    return 1;
+  }
+
+  function isSpaceFull(obj, slot, spaceKey){
+    const list = splitPeople(obj?.[slot + "_" + spaceKey]);
+    return list.length >= spaceCapacity(obj, slot, spaceKey);
+  }
+
+  function hasUnpaid(obj, slot){
+    return (obj?.[slot + "_payment"] || "paid") === "unpaid";
+  }
+
+  function isCancelled(obj, slot){
+    return (obj?.[slot + "_payment"] || "") === "cancelled";
+  }
+
   function deriveSlotStatus(obj, slot){
     const special = obj?.[slot + "_special"] || "normal";
     if(special === "closed") return "closed";
     if(special === "unavailable") return "unavailable";
 
-    const isPrivate = obj?.[slot + "_private"] === true || obj?.[slot + "_private"] === "yes";
-    if(isPrivate) return "full";
+    const used =
+      Math.min(splitPeople(obj?.[slot + "_front39"]).length, spaceCapacity(obj, slot, "front39"))
+      + Math.min(splitPeople(obj?.[slot + "_back39"]).length, spaceCapacity(obj, slot, "back39"))
+      + Math.min(splitPeople(obj?.[slot + "_room41"]).length, spaceCapacity(obj, slot, "room41"));
 
-    const used = Math.min(splitPeople(obj?.[slot + "_front39"]).length, 3)
-      + Math.min(splitPeople(obj?.[slot + "_back39"]).length, 1)
-      + Math.min(splitPeople(obj?.[slot + "_room41"]).length, 1);
+    const max =
+      spaceCapacity(obj, slot, "front39")
+      + spaceCapacity(obj, slot, "back39")
+      + spaceCapacity(obj, slot, "room41");
 
     if(used <= 0) return "available";
-    if(used >= 5) return "full";
+    if(used >= max) return "full";
     return "limited";
   }
 
@@ -1626,15 +1843,22 @@ import {
     const back = obj?.[slot + "_back39"] || "";
     const room41 = obj?.[slot + "_room41"] || "";
     const source = obj?.[slot + "_source"] || "";
-    const isPrivate = obj?.[slot + "_private"] === true || obj?.[slot + "_private"] === "yes";
+    const payment = obj?.[slot + "_payment"] || "paid";
     const note = obj?.[slot] || "";
-    const prefix = source ? source + "｜" : "";
-    const privacy = isPrivate ? "🔒私密｜" : "";
 
-    if(front) rows.push("39前｜" + privacy + prefix + front);
-    if(back) rows.push("39後｜" + privacy + prefix + back);
-    if(room41) rows.push("41｜" + privacy + prefix + room41);
-    if(isPrivate && !front && !back && !room41) rows.push("🔒私密空間");
+    const prefix = source ? source + "｜" : "";
+    let paymentLabel = "";
+    if(payment === "unpaid") paymentLabel = "｜未匯款";
+    if(payment === "cancelled") paymentLabel = "｜已取消";
+
+    function privacy(spaceKey){
+      const isPrivate = obj?.[slot + "_" + spaceKey + "_private"] === true || obj?.[slot + "_" + spaceKey + "_private"] === "yes";
+      return isPrivate ? "🔒" : "";
+    }
+
+    if(front) rows.push("39前｜" + privacy("front39") + prefix + front + paymentLabel);
+    if(back) rows.push("39後｜" + privacy("back39") + prefix + back + paymentLabel);
+    if(room41) rows.push("41｜" + privacy("room41") + prefix + room41 + paymentLabel);
     if(note) rows.push("備註｜" + note);
 
     return rows.join("<br>");
@@ -1761,8 +1985,16 @@ import {
         slot.className = "slot " + s;
         slot.addEventListener("click", (e)=>{
           e.stopPropagation();
+          const obj = monthData.days?.[dk] || {};
+          const statusKey = deriveSlotStatus(obj, s);
+
           if(document.body.classList.contains("mode-a")){
             openEditor(dk, s);
+            return;
+          }
+
+          if(statusKey === "available" || statusKey === "limited"){
+            openExternalRegister(dk, s);
           }
         });
 
@@ -1776,6 +2008,10 @@ import {
         const statusKey = deriveSlotStatus(obj, s);
         const displayStatusKey = statusKey === "limited" ? "available" : statusKey;
         slot.classList.toggle("status-block-full", displayStatusKey === "full");
+        slot.classList.toggle("status-block-unavailable", displayStatusKey === "unavailable");
+        slot.classList.toggle("status-block-closed", displayStatusKey === "closed");
+        slot.classList.toggle("status-block-unpaid", hasUnpaid(obj, s));
+        slot.classList.toggle("status-block-cancelled", isCancelled(obj, s));
 
         const statusTextMap = {
           available: "可使用",
@@ -1839,10 +2075,15 @@ import {
     document.getElementById("editSlot").value = slot;
     document.getElementById("editSpecial").value = obj[slot + "_special"] || "normal";
     document.getElementById("editSource").value = obj[slot + "_source"] || "";
-    document.getElementById("editPrivate").value = (obj[slot + "_private"] === true || obj[slot + "_private"] === "yes") ? "yes" : "no";
+    document.getElementById("editContactName").value = obj[slot + "_contactName"] || "";
+    document.getElementById("editContactInfo").value = obj[slot + "_contactInfo"] || "";
+    document.getElementById("editPayment").value = obj[slot + "_payment"] || "paid";
     document.getElementById("editFront39").value = obj[slot + "_front39"] || "";
+    document.getElementById("editFront39Private").value = (obj[slot + "_front39_private"] === true || obj[slot + "_front39_private"] === "yes") ? "yes" : "no";
     document.getElementById("editBack39").value = obj[slot + "_back39"] || "";
+    document.getElementById("editBack39Private").value = (obj[slot + "_back39_private"] === true || obj[slot + "_back39_private"] === "yes") ? "yes" : "no";
     document.getElementById("editRoom41").value = obj[slot + "_room41"] || "";
+    document.getElementById("editRoom41Private").value = (obj[slot + "_room41_private"] === true || obj[slot + "_room41_private"] === "yes") ? "yes" : "no";
     document.getElementById("editText").value = obj[slot] || "";
     document.getElementById("editor").classList.add("show");
   }
@@ -1852,19 +2093,34 @@ import {
     const txt = document.getElementById("editText").value.trim();
     const special = document.getElementById("editSpecial").value;
     const source = document.getElementById("editSource").value;
-    const privateSpace = document.getElementById("editPrivate").value;
+    const contactName = document.getElementById("editContactName").value.trim();
+    const contactInfo = document.getElementById("editContactInfo").value.trim();
+    const payment = document.getElementById("editPayment").value;
     const front39 = document.getElementById("editFront39").value.trim();
+    const front39Private = document.getElementById("editFront39Private").value;
     const back39 = document.getElementById("editBack39").value.trim();
+    const back39Private = document.getElementById("editBack39Private").value;
     const room41 = document.getElementById("editRoom41").value.trim();
+    const room41Private = document.getElementById("editRoom41Private").value;
+
+    if(source === "其他共享" && (!contactName || !contactInfo)){
+      alert("其他共享請填寫聯繫人與聯繫資料。");
+      return;
+    }
 
     const patch = {
       [slot]: txt,
       [slot + "_special"]: special,
       [slot + "_source"]: source,
-      [slot + "_private"]: privateSpace,
+      [slot + "_contactName"]: contactName,
+      [slot + "_contactInfo"]: contactInfo,
+      [slot + "_payment"]: payment,
       [slot + "_front39"]: front39,
+      [slot + "_front39_private"]: front39Private,
       [slot + "_back39"]: back39,
-      [slot + "_room41"]: room41
+      [slot + "_back39_private"]: back39Private,
+      [slot + "_room41"]: room41,
+      [slot + "_room41_private"]: room41Private
     };
 
     await saveSlotToCloud(selectedDateKey, patch);
@@ -1877,18 +2133,28 @@ import {
       [slot]: "",
       [slot + "_special"]: "normal",
       [slot + "_source"]: "",
-      [slot + "_private"]: "no",
+      [slot + "_contactName"]: "",
+      [slot + "_contactInfo"]: "",
+      [slot + "_payment"]: "paid",
       [slot + "_front39"]: "",
+      [slot + "_front39_private"]: "no",
       [slot + "_back39"]: "",
-      [slot + "_room41"]: ""
+      [slot + "_back39_private"]: "no",
+      [slot + "_room41"]: "",
+      [slot + "_room41_private"]: "no"
     });
 
     document.getElementById("editSpecial").value = "normal";
     document.getElementById("editSource").value = "";
-    document.getElementById("editPrivate").value = "no";
+    document.getElementById("editContactName").value = "";
+    document.getElementById("editContactInfo").value = "";
+    document.getElementById("editPayment").value = "paid";
     document.getElementById("editFront39").value = "";
+    document.getElementById("editFront39Private").value = "no";
     document.getElementById("editBack39").value = "";
+    document.getElementById("editBack39Private").value = "no";
     document.getElementById("editRoom41").value = "";
+    document.getElementById("editRoom41Private").value = "no";
     document.getElementById("editText").value = "";
   }
 
@@ -1915,6 +2181,141 @@ import {
     });
   }
 
+
+  let externalDateKey = "";
+  let externalSlotKey = "morning";
+
+  function availableSpacesForSlot(dk, slot){
+    const obj = monthData.days?.[dk] || {};
+    const spaces = [];
+    if(!isSpaceFull(obj, slot, "front39")) spaces.push("front39");
+    if(!isSpaceFull(obj, slot, "back39")) spaces.push("back39");
+    if(!isSpaceFull(obj, slot, "room41")) spaces.push("room41");
+    return spaces;
+  }
+
+  function openExternalRegister(dk, slot){
+    const obj = monthData.days?.[dk] || {};
+    const statusKey = deriveSlotStatus(obj, slot);
+
+    if(statusKey === "full" || statusKey === "unavailable" || statusKey === "closed"){
+      return;
+    }
+
+    externalDateKey = dk;
+    externalSlotKey = slot;
+
+    const spaceSelect = document.getElementById("externalSpace");
+    const available = availableSpacesForSlot(dk, slot);
+
+    spaceSelect.innerHTML = "";
+    const labels = {front39:"39前", back39:"39後", room41:"41"};
+    available.forEach(space => {
+      const opt = document.createElement("option");
+      opt.value = space;
+      opt.textContent = labels[space];
+      spaceSelect.appendChild(opt);
+    });
+
+    if(available.length === 0){
+      alert("此時段空間已滿，無法登記。");
+      return;
+    }
+
+    document.getElementById("externalDate").value = dk;
+    document.getElementById("externalSlot").value = slotLabels[slot];
+    document.getElementById("externalPurpose").value = "";
+    document.getElementById("externalPrivate").value = "no";
+    document.getElementById("externalContactName").value = "";
+    document.getElementById("externalContactInfo").value = "";
+    document.getElementById("externalNote").value = "";
+
+    document.getElementById("externalRegisterModal").classList.add("show");
+  }
+
+  function closeExternalRegister(){
+    document.getElementById("externalRegisterModal").classList.remove("show");
+  }
+
+  async function saveExternalRegister(){
+    const space = document.getElementById("externalSpace").value;
+    const purpose = document.getElementById("externalPurpose").value.trim();
+    const privateSpace = document.getElementById("externalPrivate").value;
+    const contactName = document.getElementById("externalContactName").value.trim();
+    const contactInfo = document.getElementById("externalContactInfo").value.trim();
+    const note = document.getElementById("externalNote").value.trim();
+
+    if(!purpose){
+      alert("請填寫用途。");
+      return;
+    }
+
+    if(!contactName || !contactInfo){
+      alert("外部共享登記請填寫聯繫人與聯繫資料。");
+      return;
+    }
+
+    const obj = monthData.days?.[externalDateKey] || {};
+    if(isSpaceFull(obj, externalSlotKey, space)){
+      alert("此空間已滿，請重新選擇其他時段或空間。");
+      closeExternalRegister();
+      return;
+    }
+
+    const field = externalSlotKey + "_" + space;
+    const currentPeople = splitPeople(obj[field]);
+    currentPeople.push(purpose);
+
+    const patch = {
+      [externalSlotKey + "_source"]: "其他共享",
+      [externalSlotKey + "_contactName"]: contactName,
+      [externalSlotKey + "_contactInfo"]: contactInfo,
+      [externalSlotKey + "_payment"]: "unpaid",
+      [externalSlotKey + "_" + space]: currentPeople.join("、"),
+      [externalSlotKey + "_" + space + "_private"]: privateSpace,
+      [externalSlotKey]: note
+    };
+
+    await saveSlotToCloud(externalDateKey, patch);
+    closeExternalRegister();
+    alert("已送出空間登記。此登記目前為未匯款／空間預訂中，確認匯款後才算預約成功。");
+  }
+
+
+
+  function autoCancelExpiredUnpaid(){
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    Object.keys(monthData.days || {}).forEach(dateKey => {
+      const obj = monthData.days[dateKey];
+      const bookingDate = new Date(dateKey + "T00:00:00");
+
+      const diffDays = Math.ceil((bookingDate - today) / (1000 * 60 * 60 * 24));
+
+      ["morning","afternoon","evening"].forEach(slot => {
+        const payment = obj?.[slot + "_payment"] || "paid";
+
+        if(payment !== "unpaid") return;
+
+        if(diffDays <= 2){
+          obj[slot + "_payment"] = "cancelled";
+
+          obj[slot + "_front39"] = "";
+          obj[slot + "_back39"] = "";
+          obj[slot + "_room41"] = "";
+
+          obj[slot + "_front39_private"] = "no";
+          obj[slot + "_back39_private"] = "no";
+          obj[slot + "_room41_private"] = "no";
+
+          obj[slot] = "系統自動取消｜預約日前兩天未完成匯款";
+        }
+      });
+    });
+  }
+
+
   function bindEvents(){
     document.getElementById("modeA").onclick = () => {
       const pwd = prompt("請輸入管理密碼");
@@ -1937,6 +2338,8 @@ import {
     };
 
     document.getElementById("modeB").onclick = () => setMode("b");
+    document.getElementById("closeExternalRegister").onclick = closeExternalRegister;
+    document.getElementById("saveExternalRegister").onclick = saveExternalRegister;
     const identity = document.getElementById("adminIdentity");
     if(identity){
       identity.onclick = () => {
@@ -1960,10 +2363,15 @@ import {
       const obj = monthData.days?.[selectedDateKey] || {};
       document.getElementById("editSpecial").value = obj[selectedSlot + "_special"] || "normal";
       document.getElementById("editSource").value = obj[selectedSlot + "_source"] || "";
-      document.getElementById("editPrivate").value = (obj[selectedSlot + "_private"] === true || obj[selectedSlot + "_private"] === "yes") ? "yes" : "no";
+      document.getElementById("editContactName").value = obj[selectedSlot + "_contactName"] || "";
+      document.getElementById("editContactInfo").value = obj[selectedSlot + "_contactInfo"] || "";
+      document.getElementById("editPayment").value = obj[selectedSlot + "_payment"] || "paid";
       document.getElementById("editFront39").value = obj[selectedSlot + "_front39"] || "";
+      document.getElementById("editFront39Private").value = (obj[selectedSlot + "_front39_private"] === true || obj[selectedSlot + "_front39_private"] === "yes") ? "yes" : "no";
       document.getElementById("editBack39").value = obj[selectedSlot + "_back39"] || "";
+      document.getElementById("editBack39Private").value = (obj[selectedSlot + "_back39_private"] === true || obj[selectedSlot + "_back39_private"] === "yes") ? "yes" : "no";
       document.getElementById("editRoom41").value = obj[selectedSlot + "_room41"] || "";
+      document.getElementById("editRoom41Private").value = (obj[selectedSlot + "_room41_private"] === true || obj[selectedSlot + "_room41_private"] === "yes") ? "yes" : "no";
       document.getElementById("editText").value = obj[selectedSlot] || "";
     };
 
@@ -1978,15 +2386,15 @@ import {
         const title = document.getElementById("textEditorTitle");
 
         if(currentTextEditKey === "items_morning"){
-          title.textContent = "編輯上午使用說明";
+          title.textContent = "編輯上午預約項目";
           textarea.value = monthData.items.morning;
         }
         if(currentTextEditKey === "items_afternoon"){
-          title.textContent = "編輯下午使用說明";
+          title.textContent = "編輯下午預約項目";
           textarea.value = monthData.items.afternoon;
         }
         if(currentTextEditKey === "items_evening"){
-          title.textContent = "編輯晚上使用說明";
+          title.textContent = "編輯晚上預約項目";
           textarea.value = monthData.items.evening;
         }
         if(currentTextEditKey === "month_notice"){

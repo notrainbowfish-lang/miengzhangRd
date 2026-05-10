@@ -1,166 +1,182 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Firebase 連線測試</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>民壯路聯合工作室｜共享空間系統 v2</title>
 <style>
-body{margin:0;background:#fffaf6;font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;color:#4b3128}
-.wrap{max-width:900px;margin:40px auto;padding:24px}
-.card{background:#fffdf9;border:1px solid #ead9cd;border-radius:24px;padding:24px;margin-bottom:18px;box-shadow:0 10px 30px rgba(95,56,35,.08)}
-h1,h2{margin-top:0;letter-spacing:.08em}
-button{border:1px solid #ead9cd;background:#fff;border-radius:12px;padding:10px 14px;cursor:pointer;margin-right:8px;margin-bottom:8px;font:inherit}
-button:hover{background:#fff7f1}
-.log{background:#fff;border:1px solid #ead9cd;border-radius:14px;padding:12px;min-height:120px;white-space:pre-wrap;line-height:1.7;overflow:auto}
-.ok{color:#4f9b54}
-.err{color:#b54d52}
+:root{
+  --bg:#fffaf6;--paper:#fffdf9;--ink:#4b3128;--muted:#9a7b6f;--line:#ead9cd;
+  --sun:#dce9f2;--noon:#fff0cf;--night:#eee4f6;--sat:#fff0e4;--sunDay:#fff0f3;
+  --green:#dff0d7;--orange:#ffe5bd;--red:#ffd8d8;--brown:#efe0d5;--gray:#e8e5e1;
+  --shadow:0 10px 30px rgba(95,56,35,.08)
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,rgba(255,226,216,.7),transparent 32%),radial-gradient(circle at bottom right,rgba(237,224,247,.55),transparent 30%),var(--bg);color:var(--ink);font-family:"Noto Serif CJK JP","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",serif}
+.app{max-width:1500px;margin:0 auto;padding:22px}
+.card{background:rgba(255,253,249,.94);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}
+header{display:grid;grid-template-columns:300px 1fr auto;gap:16px;align-items:center;padding:22px 26px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffaf6,#fffdf9)}
+.brand{display:flex;gap:12px;align-items:center;color:#9b6d5c}.logo{width:46px;height:46px;border:1px solid #e7cfc2;border-radius:16px;display:grid;place-items:center;background:#fff9f5;font-size:24px}.brand-title{font-size:21px;letter-spacing:.12em}.brand-sub{font-size:12px;color:#b59080}
+h1{text-align:center;margin:0;font-size:26px;letter-spacing:.12em;font-weight:500}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+button{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-radius:12px;padding:9px 13px;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(90,50,25,.04)}
+button:hover{background:#fff7f1}.badge{display:none;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff7f1;font-size:13px;color:#8a6f64}
+.content{display:grid;grid-template-columns:1fr 360px;min-height:830px}main{padding:18px 22px 26px}
+.legend{display:flex;gap:14px;margin:0 0 12px 4px;flex-wrap:wrap;font-size:14px;color:#6b4b40}.dot{width:14px;height:14px;border-radius:5px;display:inline-block;margin-right:6px;vertical-align:-2px}.g{background:var(--green)}.o{background:var(--orange)}.r{background:var(--red)}.b{background:var(--brown)}.x{background:var(--gray)}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}
+.weekday{height:38px;display:grid;place-items:center;background:#fbefe8;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.weekday:nth-child(7n),.day:nth-child(7n){border-right:none}.weekday.sun{background:var(--sunDay);color:#b54d52}.weekday.sat{background:var(--sat);color:#b54d52}
+.day{min-height:150px;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fffdf9}.day.sat{background:linear-gradient(180deg,var(--sat),#fffdf9 42%)}.day.sun{background:linear-gradient(180deg,var(--sunDay),#fffdf9 42%)}.day.empty{background:rgba(255,255,255,.35)}.day.today{outline:3px solid rgba(216,138,29,.45);outline-offset:-4px}.day-num{font-size:19px;font-weight:700;margin-bottom:6px}
+.slot{border-radius:10px;margin:6px 0;padding:7px 6px;min-height:32px;font-size:12px;text-align:center;cursor:pointer}.morning{background:var(--sun)}.afternoon{background:var(--noon)}.evening{background:var(--night)}.allDay{background:#f3dfd2}.main-status{font-weight:800}.available{color:#4f9b54}.pending{color:#9a6a4f}.partial{color:#d88a1d}.full,.closed,.unavailable{color:#a64747}.fullBlock{background:var(--red)!important}.pendingBlock{background:var(--brown)!important}.detail{display:none;text-align:left;font-size:10px;line-height:1.3;margin-top:4px;color:#8a6f64}.admin-mode .detail{display:block}.admin-mode .slot{min-height:82px}
+aside{border-left:1px solid var(--line);padding:22px;background:rgba(255,250,246,.66)}.panel{background:#fffdf9;border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 8px 24px rgba(90,50,25,.04)}.panel h2{text-align:center;margin:0 0 12px;font-size:21px;letter-spacing:.12em;font-weight:500}.small{font-size:14px;line-height:1.8;color:#74584d}.request{border:1px solid var(--line);background:#fffaf6;border-radius:14px;padding:10px;margin:8px 0;font-size:13px;line-height:1.6}.request button{padding:6px 9px;font-size:12px;margin:4px 3px 0 0}
+.admin-only,.root-only{display:none}.admin-mode .admin-only{display:block}.root-mode .root-only{display:block}
+.modal{position:fixed;inset:0;background:rgba(40,25,18,.28);display:none;align-items:flex-start;justify-content:center;z-index:80;overflow:auto;padding:18px 0}.modal.show{display:flex}.box{width:min(720px,calc(100vw - 24px));background:#fffdf9;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 25px 60px rgba(40,25,18,.2)}.box h3{margin:0 0 12px;font-size:21px}.row{display:grid;gap:6px;margin:10px 0}label{font-size:14px;color:#74584d}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 10px;font:inherit;color:var(--ink)}textarea{min-height:88px;resize:vertical}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}.hint{font-size:12px;color:#9b7f73;line-height:1.5;margin-top:4px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
+.mini-wrap{display:none;margin-top:6px}.mini-wrap.show{display:block}.mini-nav{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:8px}.mini-title{text-align:center;font-weight:700;color:#6b4b40}.mini{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-height:240px;overflow:auto}.mini div,.mini button{text-align:center;font:inherit}.mini-day{border:1px solid var(--line);border-radius:10px;padding:8px 0;background:#fffdf9;cursor:pointer}.mini-day.green{background:var(--green)}.mini-day.orange{background:var(--orange)}.mini-day.red{background:var(--red);text-decoration:line-through}.mini-day.selected{outline:3px solid rgba(75,49,40,.24);font-weight:800}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.tab-content{display:none}.tab-content.active{display:block}
+@media(max-width:1000px){header{grid-template-columns:1fr;text-align:center}.brand{justify-content:center}.controls{justify-content:center}.content{grid-template-columns:1fr}aside{border-left:none;border-top:1px solid var(--line)}}@media(max-width:640px){.app{padding:8px}.grid2,.grid3{grid-template-columns:1fr}.day{min-height:132px;padding:5px}.slot{padding:5px 4px;margin:4px 0}.controls button{flex:1 1 45%}}
 </style>
 </head>
 <body>
-<div class="wrap">
-
-<div class="card">
-<h1>Firebase / Firestore 連線測試</h1>
-<p>這頁只測試：</p>
-<ul>
-<li>Firebase 初始化</li>
-<li>Firestore 是否能讀</li>
-<li>Firestore 是否能新增</li>
-</ul>
+<div class="app"><section class="card">
+<header>
+<div class="brand"><div class="logo">✧</div><div><div class="brand-title">身心靈美學共享工作室</div><div class="brand-sub">・Mind Body Spirit Shared Studio・</div></div></div>
+<h1><span id="titleYM"></span>　共享空間狀態</h1>
+<div class="controls">
+<button id="prevBtn" type="button">‹ 上個月</button><button id="nextBtn" type="button">下個月 ›</button>
+<button id="externalLoginBtn" type="button">外部會員登入／註冊</button>
+<button id="contractLoginBtn" type="button">特約登入／註冊</button>
+<button id="adminLoginBtn" type="button">管理員登入</button>
+<span id="sessionBadge" class="badge"></span>
 </div>
-
-<div class="card">
-<h2>測試按鈕</h2>
-
-<button id="testFirebase">1. Firebase 初始化</button>
-<button id="readExternal">2. 讀 externalMembers</button>
-<button id="readContract">3. 讀 contractMembers</button>
-<button id="readManagers">4. 讀 managers</button>
-<button id="writeRequest">5. 新增 externalRequests 測試資料</button>
-
+</header>
+<div class="content">
+<main>
+<div class="legend"><span><i class="dot g"></i>可使用</span><span><i class="dot b"></i>申請中</span><span><i class="dot o"></i>部分使用</span><span><i class="dot r"></i>已預約／已滿</span><span><i class="dot x"></i>公休</span></div>
+<div id="calendar" class="calendar"></div>
+<div id="syncStatus" class="small" style="text-align:center;margin-top:14px;color:#8b6a5d">正在連線 Firestore...</div>
+</main>
+<aside>
+<div class="panel"><h2>空間說明</h2><div class="small">39前：3格，可不同使用人與用途。<br>39後：1格。<br>41：外部會員與特約會員可申請使用。<br>整天只鎖該空間全天，不影響其他空間。</div></div>
+<div class="panel admin-only"><h2>管理選單</h2><select id="adminMenu"><option value="requests">待確認申請</option><option value="contracts">特約管理</option><option value="managers">管理員管理</option><option value="history">歷史紀錄</option></select><div id="adminPanel" class="small" style="margin-top:10px"></div></div>
+<div class="panel"><h2>📣 本月公告</h2><div class="small">外部會員與特約額外申請需管理員確認後才算正式預約。預約前兩天未完成匯款，可標記逾期取消。</div></div>
+</aside>
 </div>
+</section></div>
 
-<div class="card">
-<h2>測試結果</h2>
-<div id="log" class="log"></div>
-</div>
+<div class="modal" id="externalModal"><div class="box"><h3>外部會員登入／註冊</h3>
+<div class="tabs"><button type="button" data-tab="externalLogin" class="active">登入</button><button type="button" data-tab="externalRegister">註冊</button></div>
+<div id="externalLogin" class="tab-content active"><div class="grid2"><div class="row"><label>帳號</label><input id="externalAccount"></div><div class="row"><label>密碼</label><input id="externalPassword" type="password"></div></div><div class="actions"><button type="button" data-close="externalModal">取消</button><button type="button" id="loginExternal">登入</button></div></div>
+<div id="externalRegister" class="tab-content"><div class="grid2"><div class="row"><label>姓名</label><input id="regExternalName"></div><div class="row"><label>電話</label><input id="regExternalPhone"></div><div class="row"><label>帳號</label><input id="regExternalAccount"></div><div class="row"><label>密碼</label><input id="regExternalPassword" type="password"></div></div><div class="hint">未來可由 LINE 連結自動帶入 lineUserId。</div><div class="actions"><button type="button" data-close="externalModal">取消</button><button type="button" id="saveExternalRegister">送出註冊</button></div></div>
+</div></div>
 
-</div>
+<div class="modal" id="contractModal"><div class="box"><h3>特約登入／註冊</h3>
+<div class="tabs"><button type="button" data-tab="contractLogin" class="active">登入</button><button type="button" data-tab="contractRegister">註冊申請</button></div>
+<div id="contractLogin" class="tab-content active"><div class="grid2"><div class="row"><label>帳號</label><input id="contractAccount"></div><div class="row"><label>密碼</label><input id="contractPassword" type="password"></div></div><div class="actions"><button type="button" data-close="contractModal">取消</button><button type="button" id="loginContract">登入</button></div></div>
+<div id="contractRegister" class="tab-content"><div class="grid2"><div class="row"><label>姓名</label><input id="regContractName"></div><div class="row"><label>電話</label><input id="regContractPhone"></div><div class="row"><label>帳號</label><input id="regContractAccount"></div><div class="row"><label>密碼</label><input id="regContractPassword" type="password"></div></div><div class="row"><label>特約負責人</label><input id="regContractManager"></div><div class="actions"><button type="button" data-close="contractModal">取消</button><button type="button" id="saveContractRegister">送出註冊申請</button></div></div>
+</div></div>
+
+<div class="modal" id="requestModal"><div class="box"><h3 id="requestTitle">41 使用申請</h3>
+<div class="row"><label>日期</label><input id="requestDate" readonly><div id="requestMiniWrap" class="mini-wrap"><div class="mini-nav"><button type="button" id="requestPrev">‹</button><div id="requestMiniTitle" class="mini-title"></div><button type="button" id="requestNext">›</button></div><div id="requestMini" class="mini"></div></div></div>
+<div class="row"><label>時段</label><select id="requestPeriod"></select></div>
+<div class="row"><label>用途</label><input id="requestPurpose" placeholder="煥顏、身體、牌卡、療癒、課程"></div>
+<label class="check"><input type="checkbox" id="requestPrivate">私密使用 41</label>
+<div class="row"><label>備註</label><textarea id="requestNote"></textarea></div>
+<div class="actions"><button type="button" data-close="requestModal">取消</button><button type="button" id="saveRequest">送出申請</button></div>
+</div></div>
+
+<div class="modal" id="adminModal"><div class="box"><h3>管理員登入／註冊</h3>
+<div class="tabs"><button type="button" data-tab="adminLogin" class="active">登入</button><button type="button" data-tab="adminRegister">註冊申請</button></div>
+<div id="adminLogin" class="tab-content active"><div class="grid2"><div class="row"><label>管理員名稱</label><input id="adminName"></div><div class="row"><label>管理密碼</label><input id="adminPassword" type="password"></div></div><div class="actions"><button type="button" data-close="adminModal">取消</button><button type="button" id="loginAdmin">登入</button></div></div>
+<div id="adminRegister" class="tab-content"><div class="grid2"><div class="row"><label>姓名</label><input id="regAdminName"></div><div class="row"><label>電話</label><input id="regAdminPhone"></div><div class="row"><label>帳號</label><input id="regAdminAccount"></div><div class="row"><label>密碼</label><input id="regAdminPassword" type="password"></div></div><div class="actions"><button type="button" data-close="adminModal">取消</button><button type="button" id="saveAdminRegister">送出管理員申請</button></div></div>
+</div></div>
+
+<div class="modal" id="adminBookingModal"><div class="box"><h3>管理登記</h3>
+<div class="row"><label>日期</label><input id="adminDate" readonly><div id="adminMiniWrap" class="mini-wrap"><div class="mini-nav"><button type="button" id="adminPrev">‹</button><div id="adminMiniTitle" class="mini-title"></div><button type="button" id="adminNext">›</button></div><div id="adminMini" class="mini"></div></div></div>
+<div class="row"><label>時段</label><select id="adminPeriod"></select></div>
+<div class="row"><label>特殊狀態</label><select id="adminSpecial"><option value="">無</option><option value="closed">公休</option><option value="unavailable">不可使用</option></select></div>
+<div class="row"><label>39前（三格：使用人＋用途）</label>
+<div class="grid3"><input id="frontUser1" placeholder="使用人1"><input id="frontPurpose1" placeholder="用途1"><input id="frontNote1" placeholder="備註1"></div>
+<div class="grid3"><input id="frontUser2" placeholder="使用人2"><input id="frontPurpose2" placeholder="用途2"><input id="frontNote2" placeholder="備註2"></div>
+<div class="grid3"><input id="frontUser3" placeholder="使用人3"><input id="frontPurpose3" placeholder="用途3"><input id="frontNote3" placeholder="備註3"></div>
+<label class="check"><input id="frontPrivate" type="checkbox">39前私密，鎖定整個 39前</label></div>
+<div class="grid2"><div class="row"><label>39後 使用人</label><input id="backUser"></div><div class="row"><label>39後 用途</label><input id="backPurpose"></div><div class="row"><label>41 使用人</label><input id="roomUser"></div><div class="row"><label>41 用途</label><input id="roomPurpose"></div></div>
+<label class="check"><input id="adminPaid" type="checkbox" checked>已確認／已匯款</label>
+<div class="actions"><button type="button" data-close="adminBookingModal">取消</button><button type="button" id="saveAdminBooking">儲存正式預約</button></div>
+</div></div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getFirestore, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyDDN2B2iOd096JVRDvsUyCxEC_ANgHRhRY",authDomain:"minzhuang-space-b9430.firebaseapp.com",projectId:"minzhuang-space-b9430",storageBucket:"minzhuang-space-b9430.firebasestorage.app",messagingSenderId:"142096356022",appId:"1:142096356022:web:af8e7a8ef8f79050c6cc17"};
+const app=initializeApp(firebaseConfig), db=getFirestore(app), $=id=>document.getElementById(id);
+const PERIODS=["morning","afternoon","evening"], PL={morning:"上午",afternoon:"下午",evening:"晚上",allDay:"整天"}, SL={front39:"39前",back39:"39後",room41:"41"}, CAP={front39:3,back39:1,room41:1}, WD=["日","一","二","三","四","五","六"];
+const managerPasswords=["qianlai","Qianlai","QIANLAI"], rootPasswords=["youqianlai","Youqianlai","YOUQIANLAI"];
+let current=new Date();current.setDate(1);let bookings=[],externalRequests=[],externalMembers=[],contractMembers=[],managers=[],session={type:"guest",role:"guest",name:"",data:null},requestMonth=new Date(),adminMonth=new Date();
 
-const logEl = document.getElementById("log");
-
-function log(msg,type=""){
-  const div=document.createElement("div");
-  div.textContent=msg;
-  if(type) div.className=type;
-  logEl.prepend(div);
-  console.log(msg);
+function keyDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function today(){return keyDate(new Date())}
+function ym(){return `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,"0")}`}
+function dateKey(day,base=current){return `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`}
+function monthRange(){const last=new Date(current.getFullYear(),current.getMonth()+1,0).getDate();return{start:`${ym()}-01`,end:`${ym()}-${String(last).padStart(2,"0")}`}}
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+function activeBookings(){return bookings.filter(b=>!["cancelled","expired","rejected"].includes(b.status))}
+function confirmed(date,p,space){return activeBookings().filter(b=>b.date===date&&b.space===space&&(b.period===p||b.period==="allDay"))}
+function pending(date,p,space="room41"){return externalRequests.filter(r=>r.status==="pending"&&r.date===date&&r.space===space&&(r.period===p||r.period==="allDay"))}
+function capacity(date,p,space){return confirmed(date,p,space).some(b=>b.privateSpace)?1:CAP[space]}
+function used(date,p,space){return Math.min(confirmed(date,p,space).length,capacity(date,p,space))}
+function full(date,p,space){return used(date,p,space)>=capacity(date,p,space)}
+function status(date,p){
+ let special=activeBookings().filter(b=>b.date===date&&b.space==="all"&&(b.period===p||b.period==="allDay"));
+ if(special.some(b=>b.status==="closed"))return"closed"; if(special.some(b=>b.status==="unavailable"))return"unavailable";
+ let u=["front39","back39","room41"].reduce((n,s)=>n+used(date,p,s),0), m=["front39","back39","room41"].reduce((n,s)=>n+capacity(date,p,s),0);
+ if(pending(date,p).length&&u===0)return"pending"; if(u<=0)return"available"; if(u>=m)return"full"; return"partial";
 }
-
-let app=null;
-let db=null;
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDDN2B2iOd096JVRDvsUyCxEC_ANgHRhRY",
-  authDomain: "minzhuang-space-b9430.firebaseapp.com",
-  projectId: "minzhuang-space-b9430",
-  storageBucket: "minzhuang-space-b9430.firebasestorage.app",
-  messagingSenderId: "142096356022",
-  appId: "1:142096356022:web:af8e7a8ef8f79050c6cc17"
-};
-
-document.getElementById("testFirebase").onclick=()=>{
-
-  try{
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    log("Firebase 初始化成功","ok");
-  }catch(err){
-    log("Firebase 初始化失敗："+err.message,"err");
-  }
-
-};
-
-async function readCollection(name){
-
-  try{
-
-    if(!db){
-      log("請先初始化 Firebase","err");
-      return;
-    }
-
-    const snap = await getDocs(collection(db,name));
-
-    log(`成功讀取 ${name} ｜共 ${snap.size} 筆`,"ok");
-
-  }catch(err){
-
-    log(`讀取 ${name} 失敗：${err.message}`,"err");
-
-  }
-
+function canApply41(date,p){return !["closed","unavailable"].includes(status(date,p))&&!full(date,p,"room41")}
+function detail(date,p){return["front39","back39","room41"].map(sp=>{let list=confirmed(date,p,sp), pen=pending(date,p,sp).length;if(!list.length&&!pen)return`${SL[sp]}｜空｜0/${capacity(date,p,sp)}`;let names=list.map(b=>`${b.privateSpace?"🔒":""}${esc(b.userName||b.manager||b.name||"")}｜${esc(b.purpose||"")}${b.period==="allDay"?"（整天）":""}`).join("、");return`${SL[sp]}｜${names||"空"}${pen?`｜申請中 ${pen}`:""}｜${used(date,p,sp)}/${capacity(date,p,sp)}`}).join("<br>")}
+function render(){
+ $("titleYM").textContent=`${current.getFullYear()}年${current.getMonth()+1}月`;$("calendar").innerHTML="";
+ WD.forEach((w,i)=>{let e=document.createElement("div");e.className="weekday"+(i===0?" sun":"")+(i===6?" sat":"");e.textContent=w;$("calendar").appendChild(e)});
+ let first=new Date(current.getFullYear(),current.getMonth(),1).getDay(), days=new Date(current.getFullYear(),current.getMonth()+1,0).getDate();
+ for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";$("calendar").appendChild(e)}
+ for(let d=1;d<=days;d++){let date=dateKey(d),dow=new Date(date+"T00:00:00").getDay(),day=document.createElement("div");day.className="day"+(dow===0?" sun":"")+(dow===6?" sat":"")+(date===today()?" today":"");day.innerHTML=`<div class="day-num">${d}</div>`;
+  PERIODS.forEach(p=>{let st=status(date,p),el=document.createElement("div");el.className=`slot ${p}`;el.classList.toggle("fullBlock",["full","closed","unavailable"].includes(st));el.classList.toggle("pendingBlock",st==="pending");let text={available:"可使用",pending:"申請中",partial:"部分使用",full:"已滿",closed:"公休",unavailable:"不可使用"}[st];el.innerHTML=`<div class="main-status ${st}">${text}</div><div class="detail">${detail(date,p)}</div>`;el.onclick=e=>{e.stopPropagation();calendarClick(date,p)};day.appendChild(el)});
+  day.onclick=()=>calendarClick(date,"morning");$("calendar").appendChild(day)}
+ renderAdminPanel();$("syncStatus").textContent=`已連線 Firestore｜預約 ${bookings.length}｜申請 ${externalRequests.filter(r=>r.status==="pending").length}`;
 }
-
-document.getElementById("readExternal").onclick=()=>{
-  readCollection("externalMembers");
-};
-
-document.getElementById("readContract").onclick=()=>{
-  readCollection("contractMembers");
-};
-
-document.getElementById("readManagers").onclick=()=>{
-  readCollection("managers");
-};
-
-document.getElementById("writeRequest").onclick=async()=>{
-
-  try{
-
-    if(!db){
-      log("請先初始化 Firebase","err");
-      return;
-    }
-
-    await addDoc(collection(db,"externalRequests"),{
-
-      name:"測試使用者",
-      phone:"0900000000",
-      date:"2026-05-10",
-      period:"morning",
-      space:"room41",
-      purpose:"Firebase 測試",
-      status:"pending",
-      createdAt:serverTimestamp()
-
-    });
-
-    log("成功新增 externalRequests 測試資料","ok");
-
-  }catch(err){
-
-    log("新增 externalRequests 失敗："+err.message,"err");
-
-  }
-
-};
-
-log("頁面已載入，可開始測試");
-
+function calendarClick(date,p){if(session.type==="admin")openAdminBooking(date,p);else if(session.type==="external")openRequest(date,p);else if(session.type==="contract")openRequest(date,p);else if(canApply41(date,p))openRequest(date,p)}
+function setSession(s){session=s;document.body.classList.toggle("admin-mode",s.type==="admin");document.body.classList.toggle("root-mode",s.role==="root");$("sessionBadge").style.display=s.type==="guest"?"none":"inline-flex";$("sessionBadge").textContent=s.type==="guest"?"":`${s.type==="admin"?"管理員":s.type==="external"?"外部會員":"特約"}：${s.name}`}
+function open(id){$(id).classList.add("show")}function close(id){$(id).classList.remove("show")}
+function allowed41(date){return PERIODS.filter(p=>canApply41(date,p))}
+function setupMini(prefix,baseDate,monthObj,allowFn,periodId){
+ $(prefix+"Date").value=baseDate;renderMini(prefix,monthObj,allowFn,periodId)
+}
+function renderMini(prefix,monthObj,allowFn,periodId){
+ $(prefix+"MiniTitle").textContent=`${monthObj.getFullYear()}年${monthObj.getMonth()+1}月`;let mini=$(prefix+"Mini");mini.innerHTML="";WD.forEach(w=>{let e=document.createElement("div");e.textContent=w;mini.appendChild(e)});let first=new Date(monthObj.getFullYear(),monthObj.getMonth(),1).getDay();for(let i=0;i<first;i++)mini.appendChild(document.createElement("div"));let days=new Date(monthObj.getFullYear(),monthObj.getMonth()+1,0).getDate();
+ for(let d=1;d<=days;d++){let dt=dateKey(d,monthObj),ps=allowFn(dt),b=document.createElement("button");b.type="button";b.className="mini-day "+(ps.length===0?"red":ps.length===1?"orange":"green");b.textContent=d;if($(prefix+"Date").value===dt)b.classList.add("selected");b.onclick=()=>{$(prefix+"Date").value=dt;$(prefix+"MiniWrap").classList.remove("show");fillPeriods(periodId,ps)};mini.appendChild(b)}
+ fillPeriods(periodId,allowFn($(prefix+"Date").value));
+}
+function fillPeriods(id,ps){let el=$(id);el.innerHTML=ps.map(p=>`<option value="${p}">${PL[p]}</option>`).join("");if(ps.length===3)el.innerHTML+=`<option value="allDay">整天</option>`}
+function openRequest(date=today(),p="morning"){open("requestModal");requestMonth=new Date(date+"T00:00:00");requestMonth.setDate(1);setupMini("request",date,requestMonth,allowed41,"requestPeriod");if([...$("requestPeriod").options].some(o=>o.value===p))$("requestPeriod").value=p;$("requestPurpose").value="";$("requestNote").value=""}
+function openAdminBooking(date=today(),p="morning"){open("adminBookingModal");adminMonth=new Date(date+"T00:00:00");adminMonth.setDate(1);setupMini("admin",date,adminMonth,()=>["morning","afternoon","evening","allDay"],"adminPeriod");$("adminPeriod").value=p;["frontUser1","frontPurpose1","frontNote1","frontUser2","frontPurpose2","frontNote2","frontUser3","frontPurpose3","frontNote3","backUser","backPurpose","roomUser","roomPurpose"].forEach(id=>$(id).value="");$("adminSpecial").value="";$("frontPrivate").checked=false}
+async function loginExternal(){let acc=$("externalAccount").value.trim(),pwd=$("externalPassword").value.trim();let snap=await getDocs(query(collection(db,"externalMembers"),where("account","==",acc),where("password","==",pwd)));if(snap.empty){alert("帳號或密碼錯誤");return}let d={id:snap.docs[0].id,...snap.docs[0].data()};if(d.status!=="active"){alert("外部會員尚未啟用");return}setSession({type:"external",role:"external",name:d.name,data:d});close("externalModal")}
+async function registerExternal(){let name=$("regExternalName").value.trim(),phone=$("regExternalPhone").value.trim(),account=$("regExternalAccount").value.trim(),password=$("regExternalPassword").value.trim();if(!name||!phone||!account||!password){alert("請完整填寫");return}await addDoc(collection(db,"externalMembers"),{name,phone,account,password,status:"active",lineUserId:"",lineDisplayName:"",lineLinked:false,notifyEnabled:true,createdAt:serverTimestamp()});alert("外部會員註冊完成");close("externalModal")}
+async function loginContract(){let acc=$("contractAccount").value.trim(),pwd=$("contractPassword").value.trim();let snap=await getDocs(query(collection(db,"contractMembers"),where("account","==",acc),where("password","==",pwd)));if(snap.empty){alert("帳號或密碼錯誤");return}let d={id:snap.docs[0].id,...snap.docs[0].data()};if(d.status!=="active"||d.monthlyPaid!==true){alert("特約尚未啟用");return}setSession({type:"contract",role:"contract",name:d.name,data:d});close("contractModal")}
+async function registerContract(){let name=$("regContractName").value.trim(),phone=$("regContractPhone").value.trim(),account=$("regContractAccount").value.trim(),password=$("regContractPassword").value.trim(),manager=$("regContractManager").value.trim();if(!name||!phone||!account||!password||!manager){alert("請完整填寫");return}await addDoc(collection(db,"contractMembers"),{name,phone,account,password,manager,status:"pending",monthlyPaid:false,monthlyAllowedCount:0,usageType:"day",allowExtraBooking:true,lineUserId:"",notifyEnabled:true,createdAt:serverTimestamp()});alert("已送出特約申請");close("contractModal")}
+async function saveRequest(){if(!session.data){alert("請先登入外部會員或特約");return}await addDoc(collection(db,"externalRequests"),{type:session.type==="contract"?"contractExtra":"external",memberId:session.data.id,name:session.data.name,phone:session.data.phone||"",account:session.data.account||"",date:$("requestDate").value,period:$("requestPeriod").value,space:"room41",purpose:$("requestPurpose").value.trim()||"空間使用",privateSpace:$("requestPrivate").checked,paymentStatus:"unpaid",status:"pending",note:$("requestNote").value.trim(),notifyBeforeDays:2,notifyStatus:"pending",createdAt:serverTimestamp()});alert("已送出申請");close("requestModal")}
+function loginAdmin(){let name=$("adminName").value.trim(),pwd=$("adminPassword").value.trim();let role=rootPasswords.includes(pwd)?"root":managerPasswords.includes(pwd)?"manager":"";if(!name||!role){alert("管理員名稱或密碼錯誤");return}setSession({type:"admin",role,name,data:{name,role}});close("adminModal")}
+async function registerAdmin(){let name=$("regAdminName").value.trim(),phone=$("regAdminPhone").value.trim(),account=$("regAdminAccount").value.trim(),password=$("regAdminPassword").value.trim();if(!name||!phone||!account||!password){alert("請完整填寫");return}await addDoc(collection(db,"managers"),{name,phone,account,password,role:"manager",status:"pending",lineUserId:"",notifyEnabled:true,createdAt:serverTimestamp()});alert("已送出管理員申請");close("adminModal")}
+async function saveAdminBooking(){let date=$("adminDate").value,p=$("adminPeriod").value,special=$("adminSpecial").value,pay=$("adminPaid").checked?"paid":"unpaid";if(special){await addDoc(collection(db,"bookings"),{date,period:p,space:"all",status:special,source:"管理",manager:session.name,purpose:special==="closed"?"公休":"不可使用",privateSpace:true,paymentStatus:"paid",createdAt:serverTimestamp()});close("adminBookingModal");return}let tasks=[],fronts=[1,2,3].map(i=>({u:$("frontUser"+i).value.trim(),p:$("frontPurpose"+i).value.trim(),n:$("frontNote"+i).value.trim()})).filter(x=>x.u||x.p);if($("frontPrivate").checked&&fronts.length>1){alert("39前私密只保留第一格");fronts=fronts.slice(0,1)}fronts.forEach((x,i)=>tasks.push(addDoc(collection(db,"bookings"),{date,period:p,space:"front39",source:"內部",manager:session.name,userName:x.u||session.name,purpose:x.p||"空間使用",note:x.n,privateSpace:$("frontPrivate").checked,paymentStatus:pay,status:"confirmed",slotIndex:i+1,createdAt:serverTimestamp()})));if($("backUser").value.trim()||$("backPurpose").value.trim())tasks.push(addDoc(collection(db,"bookings"),{date,period:p,space:"back39",source:"內部",manager:session.name,userName:$("backUser").value.trim()||session.name,purpose:$("backPurpose").value.trim()||"空間使用",privateSpace:false,paymentStatus:pay,status:"confirmed",createdAt:serverTimestamp()}));if($("roomUser").value.trim()||$("roomPurpose").value.trim())tasks.push(addDoc(collection(db,"bookings"),{date,period:p,space:"room41",source:"內部",manager:session.name,userName:$("roomUser").value.trim()||session.name,purpose:$("roomPurpose").value.trim()||"空間使用",privateSpace:false,paymentStatus:pay,status:"confirmed",createdAt:serverTimestamp()}));await Promise.all(tasks);close("adminBookingModal")}
+async function confirmReq(id){let r=externalRequests.find(x=>x.id===id);if(!r)return;await addDoc(collection(db,"bookings"),{date:r.date,period:r.period,space:r.space,source:r.type==="contractExtra"?"特約":"外部共享",manager:session.name,userName:r.name,purpose:r.purpose,privateSpace:!!r.privateSpace,paymentStatus:"paid",status:"confirmed",requestId:id,createdAt:serverTimestamp()});await updateDoc(doc(db,"externalRequests",id),{status:"confirmed",paymentStatus:"paid",confirmedBy:session.name,confirmedAt:serverTimestamp()})}
+async function cancelReq(id){await updateDoc(doc(db,"externalRequests",id),{status:"cancelled",cancelledBy:session.name,cancelledAt:serverTimestamp()})}
+async function approveContract(id){let count=Number(prompt("每月可使用數量？","4")||0),type=prompt("計算方式 day 或 timeslot","day")||"day";await updateDoc(doc(db,"contractMembers",id),{status:"active",monthlyPaid:true,monthlyAllowedCount:count,usageType:type,approvedBy:session.name,approvedAt:serverTimestamp()})}
+async function approveManager(id){if(session.role!=="root"){alert("最高權限才可核准管理員");return}await updateDoc(doc(db,"managers",id),{status:"active",approvedBy:session.name,approvedAt:serverTimestamp()})}
+function renderAdminPanel(){if(session.type!=="admin")return;let menu=$("adminMenu").value,p=$("adminPanel");if(menu==="requests"){let list=externalRequests.filter(r=>r.status==="pending");p.innerHTML=list.length?list.map(r=>`<div class="request"><b>${esc(r.name)}</b>｜${esc(r.phone)}<br>${esc(r.date)}｜${PL[r.period]}｜${esc(r.purpose)}<br>${r.type==="contractExtra"?"特約申請":"外部申請"}<br><button data-confirm="${r.id}">確認轉正式</button><button data-cancel="${r.id}">取消</button></div>`).join(""):"目前沒有待確認申請";p.querySelectorAll("[data-confirm]").forEach(b=>b.onclick=()=>confirmReq(b.dataset.confirm));p.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>cancelReq(b.dataset.cancel))}if(menu==="contracts"){p.innerHTML=contractMembers.map(m=>`<div class="request"><b>${esc(m.name)}</b>｜${esc(m.phone)}<br>帳號：${esc(m.account)}｜負責人：${esc(m.manager)}<br>狀態：${esc(m.status)}｜額度：${m.monthlyAllowedCount||0} ${m.usageType||"day"}<br><button data-approve-contract="${m.id}">核准／復權</button></div>`).join("")||"尚無特約";p.querySelectorAll("[data-approve-contract]").forEach(b=>b.onclick=()=>approveContract(b.dataset.approveContract))}if(menu==="managers"){if(session.role!=="root"){p.innerHTML="最高權限才可查看管理員管理";return}p.innerHTML=managers.map(m=>`<div class="request"><b>${esc(m.name)}</b>｜${esc(m.phone)}<br>帳號：${esc(m.account)}｜狀態：${esc(m.status)}<br><button data-approve-manager="${m.id}">核准</button></div>`).join("")||"尚無管理員";p.querySelectorAll("[data-approve-manager]").forEach(b=>b.onclick=()=>approveManager(b.dataset.approveManager))}if(menu==="history")p.innerHTML="歷史紀錄區下一版加入。"}
+let unsubs=[];
+function subAll(){unsubs.forEach(f=>f());unsubs=[];let r=monthRange();unsubs.push(onSnapshot(query(collection(db,"bookings"),where("date",">=",r.start),where("date","<=",r.end)),s=>{bookings=[];s.forEach(d=>bookings.push({id:d.id,...d.data()}));render()},err));unsubs.push(onSnapshot(collection(db,"externalRequests"),s=>{externalRequests=[];s.forEach(d=>externalRequests.push({id:d.id,...d.data()}));render()},err));unsubs.push(onSnapshot(collection(db,"externalMembers"),s=>{externalMembers=[];s.forEach(d=>externalMembers.push({id:d.id,...d.data()}));render()},err));unsubs.push(onSnapshot(collection(db,"contractMembers"),s=>{contractMembers=[];s.forEach(d=>contractMembers.push({id:d.id,...d.data()}));render()},err));unsubs.push(onSnapshot(collection(db,"managers"),s=>{managers=[];s.forEach(d=>managers.push({id:d.id,...d.data()}));render()},err))}
+function err(e){$("syncStatus").textContent="Firestore 錯誤："+e.message;console.error(e)}
+function bind(){["externalModal","contractModal","adminModal","requestModal","adminBookingModal"].forEach(id=>{});$("prevBtn").onclick=()=>{current.setMonth(current.getMonth()-1);subAll();render()};$("nextBtn").onclick=()=>{current.setMonth(current.getMonth()+1);subAll();render()};$("externalLoginBtn").onclick=()=>open("externalModal");$("contractLoginBtn").onclick=()=>open("contractModal");$("adminLoginBtn").onclick=()=>open("adminModal");document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{let box=b.closest(".box");box.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));box.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");$(b.dataset.tab).classList.add("active")});$("requestDate").onclick=()=>$("requestMiniWrap").classList.toggle("show");$("requestPrev").onclick=()=>{requestMonth.setMonth(requestMonth.getMonth()-1);renderMini("request",requestMonth,allowed41,"requestPeriod")};$("requestNext").onclick=()=>{requestMonth.setMonth(requestMonth.getMonth()+1);renderMini("request",requestMonth,allowed41,"requestPeriod")};$("adminDate").onclick=()=>$("adminMiniWrap").classList.toggle("show");$("adminPrev").onclick=()=>{adminMonth.setMonth(adminMonth.getMonth()-1);renderMini("admin",adminMonth,()=>["morning","afternoon","evening","allDay"],"adminPeriod")};$("adminNext").onclick=()=>{adminMonth.setMonth(adminMonth.getMonth()+1);renderMini("admin",adminMonth,()=>["morning","afternoon","evening","allDay"],"adminPeriod")};$("loginExternal").onclick=loginExternal;$("saveExternalRegister").onclick=registerExternal;$("loginContract").onclick=loginContract;$("saveContractRegister").onclick=registerContract;$("saveRequest").onclick=saveRequest;$("loginAdmin").onclick=loginAdmin;$("saveAdminRegister").onclick=registerAdmin;$("saveAdminBooking").onclick=saveAdminBooking;$("adminMenu").onchange=renderAdminPanel}
+try{bind();subAll();render()}catch(e){err(e);alert("頁面初始化錯誤："+e.message)}
 </script>
-
 </body>
 </html>

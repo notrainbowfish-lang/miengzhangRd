@@ -1632,7 +1632,7 @@ select option[disabled]{
         <h1><span id="titleYearMonth"></span><span>共享空間狀態</span></h1>
         <div class="controls no-capture">
           <button id="modeA" type="button">管理</button>
-          <button id="modeB" type="button">查看</button><button id="contractRegisterBtn" type="button">特約登記</button><span id="adminIdentity" class="admin-identity no-capture"></span>
+          <button id="modeB" type="button">查看</button><button id="openRegisterBtn" type="button">登記使用</button><button id="contractRegisterBtn" type="button">特約登記</button><span id="adminIdentity" class="admin-identity no-capture"></span>
           <button id="prevBtn">‹ 上個月</button>
           <button id="nextBtn">下個月 ›</button>
                     <button id="exportBtn">⇩ 匯出圖片</button>
@@ -2145,6 +2145,19 @@ import {
       const day = document.createElement("div");
       day.className = "day" + (dow===0?" sun":"") + (dow===6?" sat":"") + (isToday?" today":"");
       day.dataset.day = d;
+
+      day.addEventListener("click", () => {
+        if(document.body.classList.contains("mode-a")){
+          openEditor(dk, "morning");
+          return;
+        }
+
+        const map = getAvailableDateSlotMap();
+        const firstSlot = (map[dk] || [])[0];
+        if(firstSlot){
+          openExternalRegister(dk, firstSlot);
+        }
+      });
 
       const num = document.createElement("div");
       num.className = "day-num";
@@ -2803,6 +2816,13 @@ import {
 
     const saveExternalBtn = document.getElementById("saveExternalRegister");
     if(saveExternalBtn) saveExternalBtn.onclick = saveExternalRegister;
+
+    const openRegisterBtn = document.getElementById("openRegisterBtn");
+    if(openRegisterBtn) openRegisterBtn.onclick = () => {
+      const today = new Date();
+      externalCalendarDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      openExternalRegister(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`, "morning", "external");
+    };
 
     const contractBtn = document.getElementById("contractRegisterBtn");
     if(contractBtn) contractBtn.onclick = () => {

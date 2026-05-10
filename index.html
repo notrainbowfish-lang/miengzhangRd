@@ -1676,9 +1676,9 @@ select option[disabled]{
         </div>
         <div class="mini-calendar" id="externalMiniCalendar"></div>
         <div class="mini-calendar-legend">
-          <span><i class="mini-dot mini-green"></i>有空間</span>
-          <span><i class="mini-dot mini-orange"></i>空間不多</span>
-          <span><i class="mini-dot mini-red"></i>無空間</span>
+          <span><i class="mini-dot mini-green"></i>41 有空間</span>
+          <span><i class="mini-dot mini-orange"></i>41 時段不多</span>
+          <span><i class="mini-dot mini-red"></i>41 無空間</span>
         </div>
         <div class="hint" id="externalAvailabilityHint"></div>
       </div>
@@ -1687,10 +1687,10 @@ select option[disabled]{
         <select id="externalSlot"></select>
       </div>
       <div class="row">
-        <label>顯示方式</label>
-        <select id="externalOnlyEmpty">
-          <option value="yes">只顯示完全未使用的時段</option>
-          <option value="no">可多人使用的空間也顯示</option>
+        <label>使用形式</label>
+        <select id="externalMultiUse">
+          <option value="no">一般使用</option>
+          <option value="yes">可容納多人／多人課程</option>
         </select>
       </div>
       <div class="row">
@@ -1725,7 +1725,7 @@ select option[disabled]{
         <textarea id="externalNote" placeholder="例如：器材需求、課程人數、特殊需求"></textarea>
       </div>
       <div class="hint">
-        送出後會先標記為「未匯款／空間預訂中」。後台確認匯款後才算預約成功；預約日前兩天未匯款會自動取消。
+        送出後會先標記為「未匯款／空間預訂中」。後台確認匯款後才算預約成功；預約日前兩天未匯款會自動取消。若該時段內部空間已滿，系統會自動關閉登記。
       </div>
       <div class="editor-actions">
         <button id="closeExternalRegister">取消</button>
@@ -2373,24 +2373,25 @@ import {
       return [];
     }
 
+    // 只要整個時段已滿，就算 41 還沒被直接填，也不可再對外登記，避免內外撞期。
     const statusKey = deriveSlotStatus(obj, slot);
     if(statusKey === "full"){
       return [];
     }
 
+    // 外部共享／特約對外只開放 41。
+    // 39前、39後保留給內部與後台管理使用，不出現在前台登記選項。
     const spaces = [];
-    if(!isSpaceFull(obj, slot, "front39")) spaces.push("front39");
-    if(!isSpaceFull(obj, slot, "back39")) spaces.push("back39");
     if(!isSpaceFull(obj, slot, "room41")) spaces.push("room41");
 
     return spaces;
   }
 
   function availableSpacesForAllDay(dk){
-    const spaces = ["front39","back39","room41"];
-    return spaces.filter(space => {
-      return ["morning","afternoon","evening"].every(slot => availableSpacesForSlot(dk, slot).includes(space));
-    });
+    // 整天表示 41 在早上／下午／晚上都可使用。
+    return ["morning","afternoon","evening"].every(slot => availableSpacesForSlot(dk, slot).includes("room41"))
+      ? ["room41"]
+      : [];
   }
 
   function availableSpacesForDateSlot(dk, slot){
@@ -2406,21 +2407,14 @@ import {
 
     for(let d = 1; d <= days; d++){
       const dk = dateKeyFromExternalMonth(d);
-      const onlyEmptyEl = document.getElementById("externalOnlyEmpty");
-      const onlyEmpty = !onlyEmptyEl || onlyEmptyEl.value !== "no";
-      const obj = monthData.days?.[dk] || {};
-
       slotOrder.forEach(slot => {
-        const canUse = availableSpacesForSlot(dk, slot).length > 0;
-        const shouldShow = onlyEmpty ? (canUse && isSlotCompletelyEmpty(obj, slot)) : canUse;
-
-        if(shouldShow){
+        if(availableSpacesForSlot(dk, slot).length > 0){
           if(!map[dk]) map[dk] = [];
           map[dk].push(slot);
         }
       });
 
-      if(!onlyEmpty && availableSpacesForAllDay(dk).length > 0){
+      if(availableSpacesForAllDay(dk).length > 0){
         if(!map[dk]) map[dk] = [];
         map[dk].push("allDay");
       }
@@ -2567,7 +2561,7 @@ import {
     const availabilityHint = document.getElementById("externalAvailabilityHint");
     if(availabilityHint){
       const count = externalVisibleSlotCountForDate(selectedDate);
-      availabilityHint.textContent = selectedDate ? `當日可選時段數：${count} 個` : "";
+      availabilityHint.textContent = selectedDate ? `當日 41 可選時段數：${count} 個` : "";
     }
 
     slotSelect.innerHTML = "";
@@ -2587,15 +2581,23 @@ import {
     externalSlotKey = slotSelect.value;
 
     const availableSpaces = availableSpacesForDateSlot(selectedDate, externalSlotKey);
-    const labels = {front39:"39前", back39:"39後", room41:"41"};
+    const labels = {front39:"39前（內部）", back39:"39後（內部）", room41:"41"};
 
     spaceSelect.innerHTML = "";
-    availableSpaces.forEach(space => {
+
+    if(availableSpaces.includes("room41")){
       const opt = document.createElement("option");
-      opt.value = space;
-      opt.textContent = labels[space];
+      opt.value = "room41";
+      opt.textContent = "41";
       spaceSelect.appendChild(opt);
-    });
+    }else{
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "41（已滿）";
+      opt.disabled = true;
+      opt.style.textDecoration = "line-through";
+      spaceSelect.appendChild(opt);
+    }
 
     renderExternalMiniCalendar();
   }
@@ -2625,7 +2627,7 @@ import {
 
     rebuildExternalDateOptions();
 
-    document.getElementById("externalOnlyEmpty").value = mode === "contract" ? "no" : "yes";
+    document.getElementById("externalMultiUse").value = "no";
     document.getElementById("externalPurpose").value = "";
     document.getElementById("externalPrivate").value = "no";
     document.getElementById("externalContactName").value = "";
@@ -2643,7 +2645,7 @@ import {
       renderExternalSlotsAndSpaces();
     };
 
-    document.getElementById("externalOnlyEmpty").onchange = () => {
+    document.getElementById("externalMultiUse").onchange = () => {
       rebuildExternalDateOptions();
     };
 
@@ -2677,6 +2679,11 @@ import {
 
     if(!externalDateKey || !externalSlotKey || !space){
       alert("請選擇可登記的日期、時段與空間。");
+      return;
+    }
+
+    if(space !== "room41"){
+      alert("外部共享與特約登記目前僅開放 41 空間。");
       return;
     }
 

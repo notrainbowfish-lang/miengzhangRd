@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>空間使用紀錄｜預約行程表</title>
+  <title>民壯路聯合工作室｜共享空間狀態</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root{
@@ -198,7 +198,7 @@
     .status-text.full{color:#8d8780}
     .status-text.unavailable{color:#d85c5c}
     .status-text.closed{color:#77716c}
-    .slot-content:empty:before{content:"可預約";color:#4f9b54}
+    .slot-content:empty:before{content:"可使用";color:#4f9b54}
     .slot, .slot-content, .slot-content *{pointer-events:auto}
 
     .slot.morning{background:var(--sun)}
@@ -1340,6 +1340,19 @@ h1{
 }
 </style>
 
+
+<style>
+/* v30 shared studio core */
+.mode-b .slot{cursor:default !important;}
+.slot.status-block-full{
+  background:#ffd8d8 !important;
+  border:1px solid rgba(166,71,71,.28) !important;
+}
+.slot.status-block-full .status-text{
+  color:#a64747 !important;
+  font-weight:800 !important;
+}
+</style>
 </head>
 <body>
   <div class="app">
@@ -1352,7 +1365,7 @@ h1{
             <div class="brand-sub" >・Mind Body Spirit Shared Studio・</div>
           </div>
         </div>
-        <h1><span id="titleYearMonth"></span><span>空間使用紀錄</span></h1>
+        <h1><span id="titleYearMonth"></span><span>共享空間狀態</span></h1>
         <div class="controls no-capture">
           <button id="modeA" type="button">管理</button>
           <button id="modeB" type="button">查看</button><span id="adminIdentity" class="admin-identity no-capture"></span>
@@ -1369,20 +1382,20 @@ h1{
 
         <aside>
           <div class="panel">
-            <h2>時段預約項目</h2>
+            <h2>空間使用說明</h2>
             <div class="period">
               <div class="pill morning">☀ 上午</div>
-              <div class="editable-display" data-edit="items_morning">臉部保養、身體課程、頭皮檢測<br>療癒課程、牌卡諮詢、其他療癒項目</div>
+              <div class="editable-display" data-edit="items_morning">可登記：煥顏、身體、牌卡、療癒<br>課程、共享租借、其他空間使用</div>
               <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_morning">編輯</button>
             </div>
             <div class="period">
               <div class="pill afternoon">☀ 下午</div>
-              <div class="editable-display" data-edit="items_afternoon">臉部保養、身體課程、頭皮檢測<br>療癒課程、牌卡諮詢、其他療癒項目</div>
+              <div class="editable-display" data-edit="items_afternoon">可登記：煥顏、身體、牌卡、療癒<br>課程、共享租借、其他空間使用</div>
               <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_afternoon">編輯</button>
             </div>
             <div class="period">
               <div class="pill evening">☾ 晚上</div>
-              <div class="editable-display" data-edit="items_evening">臉部保養、療癒課程、牌卡諮詢<br>其他療癒項目</div>
+              <div class="editable-display" data-edit="items_evening">可登記：牌卡、療癒、課程<br>共享租借、其他空間使用</div>
               <button class="mini-edit-btn admin-only no-capture" data-open-edit="items_evening">編輯</button>
             </div>
           </div>
@@ -1423,28 +1436,45 @@ h1{
       <label>特殊狀態</label>
       <select id="editSpecial">
         <option value="normal">依空間自動判斷</option>
-        <option value="unavailable">不可預約</option>
+        <option value="unavailable">不可使用</option>
         <option value="closed">公休</option>
       </select>
     </div>
     <div class="row">
-      <label>39前（最多 3 位，用、分隔）</label>
-      <input id="editFront39" placeholder="例如：愉、燕、如" />
+      <label>登記來源</label>
+      <select id="editSource">
+        <option value="">不顯示來源</option>
+        <option value="京采">京采</option>
+        <option value="妘紜">妘紜</option>
+        <option value="藏光">藏光</option>
+        <option value="其他共享">其他共享</option>
+      </select>
     </div>
     <div class="row">
-      <label>39後（最多 1 位）</label>
-      <input id="editBack39" placeholder="例如：妏" />
+      <label>私密空間</label>
+      <select id="editPrivate">
+        <option value="no">不需要</option>
+        <option value="yes">需要，整個時段只保留此登記</option>
+      </select>
     </div>
     <div class="row">
-      <label>41（最多 1 位）</label>
-      <input id="editRoom41" placeholder="例如：燕" />
+      <label>39前（最多 3 筆，用、分隔；填用途）</label>
+      <input id="editFront39" placeholder="例如：煥顏、牌卡、療癒" />
+    </div>
+    <div class="row">
+      <label>39後（最多 1 筆；填用途）</label>
+      <input id="editBack39" placeholder="例如：身體" />
+    </div>
+    <div class="row">
+      <label>41（最多 1 筆；填用途）</label>
+      <input id="editRoom41" placeholder="例如：課程" />
     </div>
     <div class="row">
       <label>內部備註（可不填）</label>
       <textarea id="editText" placeholder="例如：團體課程、包場、老師外出"></textarea>
     </div>
     <div class="hint">
-      A 管理模式填空間與使用者；B 查看模式只顯示系統自動判斷後的「可預約／尚有空間／已額滿／不可預約／公休」。
+      A 管理模式登記空間用途與來源；B 查看模式只顯示系統自動判斷後的「可使用／已滿／不可使用／公休」。若選擇私密空間，該時段會直接視為已滿。
     </div>
     <div class="editor-actions">
       <button id="closeEditor">取消</button>
@@ -1497,9 +1527,9 @@ import {
   const weekdays = ["日","一","二","三","四","五","六"];
 
   const defaultItems = {
-    morning: "臉部保養、身體課程、頭皮檢測\n療癒課程、牌卡諮詢、其他療癒項目",
-    afternoon: "臉部保養、身體課程、頭皮檢測\n療癒課程、牌卡諮詢、其他療癒項目",
-    evening: "臉部保養、療癒課程、牌卡諮詢\n其他療癒項目"
+    morning: "可登記：煥顏、身體、牌卡、療癒\n課程、共享租借、其他空間使用",
+    afternoon: "可登記：煥顏、身體、牌卡、療癒\n課程、共享租借、其他空間使用",
+    evening: "可登記：牌卡、療癒、課程\n共享租借、其他空間使用"
   };
 
   const defaultNotice = "• 如需更改預約，請提前一天告知\n• 若有臨時調整，請以最新公告為主\n• 感謝您的配合與理解 ♡";
@@ -1578,6 +1608,9 @@ import {
     if(special === "closed") return "closed";
     if(special === "unavailable") return "unavailable";
 
+    const isPrivate = obj?.[slot + "_private"] === true || obj?.[slot + "_private"] === "yes";
+    if(isPrivate) return "full";
+
     const used = Math.min(splitPeople(obj?.[slot + "_front39"]).length, 3)
       + Math.min(splitPeople(obj?.[slot + "_back39"]).length, 1)
       + Math.min(splitPeople(obj?.[slot + "_room41"]).length, 1);
@@ -1592,11 +1625,16 @@ import {
     const front = obj?.[slot + "_front39"] || "";
     const back = obj?.[slot + "_back39"] || "";
     const room41 = obj?.[slot + "_room41"] || "";
+    const source = obj?.[slot + "_source"] || "";
+    const isPrivate = obj?.[slot + "_private"] === true || obj?.[slot + "_private"] === "yes";
     const note = obj?.[slot] || "";
+    const prefix = source ? source + "｜" : "";
+    const privacy = isPrivate ? "🔒私密｜" : "";
 
-    if(front) rows.push("39前｜" + front);
-    if(back) rows.push("39後｜" + back);
-    if(room41) rows.push("41｜" + room41);
+    if(front) rows.push("39前｜" + privacy + prefix + front);
+    if(back) rows.push("39後｜" + privacy + prefix + back);
+    if(room41) rows.push("41｜" + privacy + prefix + room41);
+    if(isPrivate && !front && !back && !room41) rows.push("🔒私密空間");
     if(note) rows.push("備註｜" + note);
 
     return rows.join("<br>");
@@ -1736,11 +1774,14 @@ import {
         content.className = "slot-content";
 
         const statusKey = deriveSlotStatus(obj, s);
+        const displayStatusKey = statusKey === "limited" ? "available" : statusKey;
+        slot.classList.toggle("status-block-full", displayStatusKey === "full");
+
         const statusTextMap = {
-          available: "可預約",
-          limited: "尚有空間",
-          full: "已額滿",
-          unavailable: "不可預約",
+          available: "可使用",
+          limited: "可使用",
+          full: "已滿",
+          unavailable: "不可使用",
           closed: "公休"
         };
 
@@ -1797,6 +1838,8 @@ import {
     document.getElementById("editorTitle").textContent = `${dk} 編輯`;
     document.getElementById("editSlot").value = slot;
     document.getElementById("editSpecial").value = obj[slot + "_special"] || "normal";
+    document.getElementById("editSource").value = obj[slot + "_source"] || "";
+    document.getElementById("editPrivate").value = (obj[slot + "_private"] === true || obj[slot + "_private"] === "yes") ? "yes" : "no";
     document.getElementById("editFront39").value = obj[slot + "_front39"] || "";
     document.getElementById("editBack39").value = obj[slot + "_back39"] || "";
     document.getElementById("editRoom41").value = obj[slot + "_room41"] || "";
@@ -1808,6 +1851,8 @@ import {
     const slot = document.getElementById("editSlot").value;
     const txt = document.getElementById("editText").value.trim();
     const special = document.getElementById("editSpecial").value;
+    const source = document.getElementById("editSource").value;
+    const privateSpace = document.getElementById("editPrivate").value;
     const front39 = document.getElementById("editFront39").value.trim();
     const back39 = document.getElementById("editBack39").value.trim();
     const room41 = document.getElementById("editRoom41").value.trim();
@@ -1815,6 +1860,8 @@ import {
     const patch = {
       [slot]: txt,
       [slot + "_special"]: special,
+      [slot + "_source"]: source,
+      [slot + "_private"]: privateSpace,
       [slot + "_front39"]: front39,
       [slot + "_back39"]: back39,
       [slot + "_room41"]: room41
@@ -1829,12 +1876,16 @@ import {
     await saveSlotToCloud(selectedDateKey, {
       [slot]: "",
       [slot + "_special"]: "normal",
+      [slot + "_source"]: "",
+      [slot + "_private"]: "no",
       [slot + "_front39"]: "",
       [slot + "_back39"]: "",
       [slot + "_room41"]: ""
     });
 
     document.getElementById("editSpecial").value = "normal";
+    document.getElementById("editSource").value = "";
+    document.getElementById("editPrivate").value = "no";
     document.getElementById("editFront39").value = "";
     document.getElementById("editBack39").value = "";
     document.getElementById("editRoom41").value = "";
@@ -1908,6 +1959,8 @@ import {
       selectedSlot = e.target.value;
       const obj = monthData.days?.[selectedDateKey] || {};
       document.getElementById("editSpecial").value = obj[selectedSlot + "_special"] || "normal";
+      document.getElementById("editSource").value = obj[selectedSlot + "_source"] || "";
+      document.getElementById("editPrivate").value = (obj[selectedSlot + "_private"] === true || obj[selectedSlot + "_private"] === "yes") ? "yes" : "no";
       document.getElementById("editFront39").value = obj[selectedSlot + "_front39"] || "";
       document.getElementById("editBack39").value = obj[selectedSlot + "_back39"] || "";
       document.getElementById("editRoom41").value = obj[selectedSlot + "_room41"] || "";
@@ -1925,15 +1978,15 @@ import {
         const title = document.getElementById("textEditorTitle");
 
         if(currentTextEditKey === "items_morning"){
-          title.textContent = "編輯上午預約項目";
+          title.textContent = "編輯上午使用說明";
           textarea.value = monthData.items.morning;
         }
         if(currentTextEditKey === "items_afternoon"){
-          title.textContent = "編輯下午預約項目";
+          title.textContent = "編輯下午使用說明";
           textarea.value = monthData.items.afternoon;
         }
         if(currentTextEditKey === "items_evening"){
-          title.textContent = "編輯晚上預約項目";
+          title.textContent = "編輯晚上使用說明";
           textarea.value = monthData.items.evening;
         }
         if(currentTextEditKey === "month_notice"){

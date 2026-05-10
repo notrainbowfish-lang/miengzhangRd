@@ -1796,10 +1796,22 @@ select option[disabled]{
       <div class="hint">未勾選＝空間預訂中；預約日前兩天未匯款會自動取消。</div>
     </div>
     <div class="row">
+      <label>39前（最多 3 筆，用、分隔；填用途）</label>
+      <input id="editFront39" placeholder="例如：愉、煥顏、牌卡" />
+    </div>
+    <div class="row">
       <label><input type="checkbox" id="editFront39Private" /> 39前私密使用（鎖定整個空間）</label>
     </div>
     <div class="row">
+      <label>39後（最多 1 筆；填用途）</label>
+      <input id="editBack39" placeholder="例如：燕、身體" />
+    </div>
+    <div class="row">
       <label><input type="checkbox" id="editBack39Private" /> 39後私密使用（鎖定整個空間）</label>
+    </div>
+    <div class="row">
+      <label>41（最多 1 筆；填用途）</label>
+      <input id="editRoom41" placeholder="例如：外部共享、課程" />
     </div>
     <div class="row">
       <label><input type="checkbox" id="editRoom41Private" /> 41私密使用（鎖定整個空間）</label>
@@ -2252,6 +2264,11 @@ import {
   }
 
   function openEditor(dk, slot){
+    if(!document.getElementById("editFront39") || !document.getElementById("editBack39") || !document.getElementById("editRoom41")){
+      alert("管理登記欄位未載入，請重新整理頁面。");
+      return;
+    }
+
     selectedDateKey = dk;
     selectedSlot = slot;
     const obj = monthData.days?.[dk] || {};
@@ -2861,7 +2878,7 @@ import {
       document.getElementById("editSource").value = obj[selectedSlot + "_source"] || "";
       document.getElementById("editContactName").value = obj[selectedSlot + "_contactName"] || "";
       document.getElementById("editContactInfo").value = obj[selectedSlot + "_contactInfo"] || "";
-      document.getElementById("editPayment").value = obj[selectedSlot + "_payment"] || "paid";
+      document.getElementById("editPayment").checked = (obj[selectedSlot + "_payment"] || "unpaid") === "paid";
       document.getElementById("editFront39").value = obj[selectedSlot + "_front39"] || "";
       document.getElementById("editFront39Private").checked = (obj[selectedSlot + "_front39_private"] === true || obj[selectedSlot + "_front39_private"] === "yes");
       document.getElementById("editBack39").value = obj[selectedSlot + "_back39"] || "";

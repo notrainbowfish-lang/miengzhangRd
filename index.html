@@ -2259,7 +2259,7 @@ import {
     document.getElementById("editor").classList.add("show");
   }
 
-  async async function saveEditor(){
+  async function saveEditor(){
     const slot = document.getElementById("editSlot").value;
     const txt = document.getElementById("editText").value.trim();
     const special = document.getElementById("editSpecial").value;
@@ -2798,9 +2798,14 @@ import {
     };
 
     document.getElementById("modeB").onclick = () => setMode("b");
-    document.getElementById("closeExternalRegister").onclick = closeExternalRegister;
-    document.getElementById("saveExternalRegister").onclick = saveExternalRegister;
-    document.getElementById("contractRegisterBtn").onclick = () => {
+    const closeExternalBtn = document.getElementById("closeExternalRegister");
+    if(closeExternalBtn) closeExternalBtn.onclick = closeExternalRegister;
+
+    const saveExternalBtn = document.getElementById("saveExternalRegister");
+    if(saveExternalBtn) saveExternalBtn.onclick = saveExternalRegister;
+
+    const contractBtn = document.getElementById("contractRegisterBtn");
+    if(contractBtn) contractBtn.onclick = () => {
       const pwd = prompt("請輸入特約登記密碼");
       if(!pwd) return;
 

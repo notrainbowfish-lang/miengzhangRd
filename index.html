@@ -56,7 +56,7 @@ aside{border-left:1px solid var(--line);padding:22px;background:rgba(255,250,246
 <div class="legend"><span><i class="dot g"></i>可使用</span><span><i class="dot b"></i>申請中</span><span><i class="dot o"></i>部分使用</span><span><i class="dot r"></i>已預約／已滿</span><span><i class="dot x"></i>公休</span></div>
 <div id="calendar" class="calendar"></div>
 <div class="quote">＊ 前台可查看 39前／39後／41 狀態；外部與特約僅可申請 41。＊</div>
-<div id="syncStatus" class="quote no-capture">尚未連線資料庫</div>
+<div id="syncStatus" class="quote no-capture">頁面已載入，正在連線 Firestore...</div>
 </main>
 <aside>
 <div class="panel"><h2>空間說明</h2><div class="small">39前：3 格，可不同使用人／用途。<br>39後：1 格。<br>41：外部共享與特約可申請使用。<br>整天只鎖定該空間全天，不影響其他空間。</div></div>
@@ -146,6 +146,18 @@ function dateKey(day, base=current){return `${base.getFullYear()}-${String(base.
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function monthRange(){const last=new Date(current.getFullYear(),current.getMonth()+1,0).getDate();return{start:`${ym()}-01`,end:`${ym()}-${String(last).padStart(2,"0")}`}}
 function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+function safeClick(id, fn){
+  const el = $(id);
+  if(!el){ console.warn("找不到按鈕：", id); return; }
+  el.addEventListener("click", (e)=>{ e.preventDefault(); try{ fn(e); }catch(err){ showErr(err); alert("操作失敗："+err.message); } });
+}
+function safeAsync(fn){
+  return async function(e){
+    if(e && e.preventDefault) e.preventDefault();
+    try{ await fn(e); }
+    catch(err){ showErr(err); alert("操作失敗："+err.message); }
+  }
+}
 function activeBookings(){return bookings.filter(b=>!["cancelled","expired","rejected"].includes(b.status))}
 function confirmed(date, period, space){return activeBookings().filter(b=>b.date===date && b.space===space && (b.period===period || b.period==="allDay"))}
 function pendingRequests(date, period, space="room41"){return externalRequests.filter(r=>r.status==="pending" && r.date===date && r.space===space && (r.period===period || r.period==="allDay"))}
@@ -357,31 +369,81 @@ function subscribe(){
   unsubscribers.push(onSnapshot(collection(db,"bookingRequests"),s=>{bookingRequests=[];s.forEach(d=>bookingRequests.push({id:d.id,...d.data()}));render()},showErr));
   unsubscribers.push(onSnapshot(collection(db,"managers"),s=>{managers=[];s.forEach(d=>managers.push({id:d.id,...d.data()}));render()},showErr));
 }
-function showErr(err){$("syncStatus").textContent="Firestore 錯誤："+err.message; console.error(err)}
+function showErr(err){
+  const msg = err && err.message ? err.message : String(err);
+  if($("syncStatus")) $("syncStatus").textContent="錯誤："+msg;
+  console.error(err);
+}
 function bind(){
-  $("prevBtn").onclick=()=>{current.setMonth(current.getMonth()-1);subscribe();render()};
-  $("nextBtn").onclick=()=>{current.setMonth(current.getMonth()+1);subscribe();render()};
-  $("shareBtn").onclick=()=>openShare(todayKey(),"morning");
-  $("contractBtn").onclick=()=>openModal("contractModal");
-  $("adminBtn").onclick=()=>openModal("adminLoginModal");
-  document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{const box=b.closest(".box");box.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));box.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");$(b.dataset.tab).classList.add("active")});
-  ["share","contractUse","admin"].forEach(key=>{
-    $(`${key}Date`).onclick=()=> $(`${key}MiniWrap`).classList.toggle("show");
-    document.querySelector(`[data-mini-prev="${key}"]`).onclick=()=>{minis[key].month.setMonth(minis[key].month.getMonth()-1);renderMini(key)};
-    document.querySelector(`[data-mini-next="${key}"]`).onclick=()=>{minis[key].month.setMonth(minis[key].month.getMonth()+1);renderMini(key)};
+  safeClick("prevBtn",()=>{current.setMonth(current.getMonth()-1);subscribe();render()});
+  safeClick("nextBtn",()=>{current.setMonth(current.getMonth()+1);subscribe();render()});
+  safeClick("shareBtn",()=>openShare(todayKey(),"morning"));
+  safeClick("contractBtn",()=>openModal("contractModal"));
+  safeClick("adminBtn",()=>openModal("adminLoginModal"));
+
+  document.querySelectorAll("[data-close]").forEach(b=>{
+    b.addEventListener("click",(e)=>{e.preventDefault();closeModal(b.dataset.close)});
   });
-  $("saveShare").onclick=saveShare;
-  $("loginContract").onclick=loginContract;
-  $("saveContractRegister").onclick=saveContractRegister;
-  $("saveContractUse").onclick=saveContractUse;
-  $("loginAdmin").onclick=loginAdmin;
-  $("saveAdminRegister").onclick=saveAdminRegister;
-  $("saveAdminBooking").onclick=saveAdminBooking;
-  $("adminMenu").onchange=renderAdminPanel;
+
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    b.addEventListener("click",(e)=>{
+      e.preventDefault();
+      const box=b.closest(".box");
+      box.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));
+      box.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      $(b.dataset.tab).classList.add("active");
+    });
+  });
+
+  ["share","contractUse","admin"].forEach(key=>{
+    const dateEl=$(`${key}Date`);
+    const wrap=$(`${key}MiniWrap`);
+    const prev=document.querySelector(`[data-mini-prev="${key}"]`);
+    const next=document.querySelector(`[data-mini-next="${key}"]`);
+
+    if(dateEl && wrap){
+      dateEl.addEventListener("click",(e)=>{e.preventDefault();wrap.classList.toggle("show")});
+    }
+    if(prev){
+      prev.addEventListener("click",(e)=>{
+        e.preventDefault();
+        if(!minis[key]) return;
+        minis[key].month.setMonth(minis[key].month.getMonth()-1);
+        renderMini(key);
+      });
+    }
+    if(next){
+      next.addEventListener("click",(e)=>{
+        e.preventDefault();
+        if(!minis[key]) return;
+        minis[key].month.setMonth(minis[key].month.getMonth()+1);
+        renderMini(key);
+      });
+    }
+  });
+
+  safeClick("saveShare", safeAsync(saveShare));
+  safeClick("loginContract", safeAsync(loginContract));
+  safeClick("saveContractRegister", safeAsync(saveContractRegister));
+  safeClick("saveContractUse", safeAsync(saveContractUse));
+  safeClick("loginAdmin", loginAdmin);
+  safeClick("saveAdminRegister", safeAsync(saveAdminRegister));
+  safeClick("saveAdminBooking", safeAsync(saveAdminBooking));
+
+  const adminMenu=$("adminMenu");
+  if(adminMenu) adminMenu.addEventListener("change", renderAdminPanel);
+
   document.addEventListener("open-admin-today",()=>openAdminBooking(todayKey(),"morning"));
 }
-bind();subscribe();render();
+try{
+  bind();
+  subscribe();
+  render();
+}catch(err){
+  showErr(err);
+  alert("頁面初始化失敗："+err.message);
+}
 </script>
 </body>
 </html>

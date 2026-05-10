@@ -1533,6 +1533,41 @@ h1{
 .mini-red{background:#ffd8d8}
 </style>
 
+
+<style>
+/* v35 compact register modal + contract mode */
+#externalRegisterModal{
+  align-items:flex-start !important;
+  overflow:auto !important;
+  padding:18px 0 !important;
+}
+#externalRegisterModal .text-editor-box{
+  max-height:none !important;
+  overflow:visible !important;
+  margin:0 auto !important;
+}
+.mini-calendar{
+  max-height:220px;
+  overflow:auto;
+  padding-right:2px;
+}
+.mini-day{
+  min-height:34px;
+}
+.contract-mode-note{
+  display:none;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#fff0cf;
+  color:#98611c;
+  font-size:13px;
+  line-height:1.5;
+}
+.contract-active .contract-mode-note{
+  display:block;
+}
+</style>
+
 </head>
 <body>
   <div class="app">
@@ -1548,7 +1583,7 @@ h1{
         <h1><span id="titleYearMonth"></span><span>共享空間狀態</span></h1>
         <div class="controls no-capture">
           <button id="modeA" type="button">管理</button>
-          <button id="modeB" type="button">查看</button><span id="adminIdentity" class="admin-identity no-capture"></span>
+          <button id="modeB" type="button">查看</button><button id="contractRegisterBtn" type="button">特約登記</button><span id="adminIdentity" class="admin-identity no-capture"></span>
           <button id="prevBtn">‹ 上個月</button>
           <button id="nextBtn">下個月 ›</button>
                     <button id="exportBtn">⇩ 匯出圖片</button>
@@ -1595,6 +1630,7 @@ h1{
   <div class="text-editor-modal no-capture" id="externalRegisterModal">
     <div class="text-editor-box">
       <h3 id="externalRegisterTitle">外部共享空間登記</h3>
+      <div class="contract-mode-note" id="contractModeNote">目前為特約登記模式：可提前登記使用，但不開放後台管理。</div>
       <div class="row">
         <label>日期</label>
         <select id="externalDate" style="display:none"></select>
@@ -2260,6 +2296,8 @@ import {
 
   let externalDateKey = "";
   let externalSlotKey = "morning";
+  let externalRegisterMode = "external";
+  const contractPasswords = ["teyue","TEYUE","特約"];
 
   function availableSpacesForSlot(dk, slot){
     const obj = monthData.days?.[dk] || {};
@@ -2276,6 +2314,18 @@ import {
     return spaces;
   }
 
+  function availableSpacesForAllDay(dk){
+    const labels = ["front39","back39","room41"];
+    return labels.filter(space => {
+      return ["morning","afternoon","evening"].every(slot => availableSpacesForSlot(dk, slot).includes(space));
+    });
+  }
+
+  function availableSpacesForDateSlot(dk, slot){
+    if(slot === "allDay") return availableSpacesForAllDay(dk);
+    return availableSpacesForSlot(dk, slot);
+  }
+
   function getAvailableDateSlotMap(){
     const map = {};
     const y = current.getFullYear();
@@ -2290,6 +2340,11 @@ import {
           map[dk].push(slot);
         }
       });
+
+      if(availableSpacesForAllDay(dk).length > 0){
+        if(!map[dk]) map[dk] = [];
+        map[dk].push("allDay");
+      }
     }
 
     return map;
@@ -2378,7 +2433,7 @@ import {
     availableSlots.forEach(slot => {
       const opt = document.createElement("option");
       opt.value = slot;
-      opt.textContent = slotLabels[slot];
+      opt.textContent = slot === "allDay" ? "整天" : slotLabels[slot];
       slotSelect.appendChild(opt);
     });
 
@@ -2390,7 +2445,7 @@ import {
 
     externalSlotKey = slotSelect.value;
 
-    const availableSpaces = availableSpacesForSlot(selectedDate, externalSlotKey);
+    const availableSpaces = availableSpacesForDateSlot(selectedDate, externalSlotKey);
     const labels = {front39:"39前", back39:"39後", room41:"41"};
 
     spaceSelect.innerHTML = "";
@@ -2404,7 +2459,14 @@ import {
     renderExternalMiniCalendar();
   }
 
-  function openExternalRegister(dk, slot){
+  function openExternalRegister(dk, slot, mode = "external"){
+    externalRegisterMode = mode;
+
+    const modal = document.getElementById("externalRegisterModal");
+    modal.classList.toggle("contract-active", mode === "contract");
+
+    document.getElementById("externalRegisterTitle").textContent = mode === "contract" ? "特約空間登記" : "外部共享空間登記";
+
     const map = getAvailableDateSlotMap();
     const dateKeys = Object.keys(map).sort();
 
@@ -2480,29 +2542,42 @@ import {
     }
 
     const obj = monthData.days?.[externalDateKey] || {};
-    if(availableSpacesForSlot(externalDateKey, externalSlotKey).length === 0 || isSpaceFull(obj, externalSlotKey, space)){
-      alert("此空間或時段已滿，請重新選擇其他日期、時段或空間。");
-      closeExternalRegister();
-      return;
+    const slotsToSave = externalSlotKey === "allDay" ? ["morning","afternoon","evening"] : [externalSlotKey];
+
+    for(const slot of slotsToSave){
+      if(!availableSpacesForDateSlot(externalDateKey, externalSlotKey).includes(space) || isSpaceFull(obj, slot, space)){
+        alert("此空間或時段已滿，請重新選擇其他日期、時段或空間。");
+        closeExternalRegister();
+        return;
+      }
     }
 
-    const field = externalSlotKey + "_" + space;
-    const currentPeople = splitPeople(obj[field]);
-    currentPeople.push(purpose);
+    const patch = {};
+    const source = externalRegisterMode === "contract" ? "特約" : "其他共享";
+    const payment = externalRegisterMode === "contract" ? "paid" : "unpaid";
 
-    const patch = {
-      [externalSlotKey + "_source"]: "其他共享",
-      [externalSlotKey + "_contactName"]: contactName,
-      [externalSlotKey + "_contactInfo"]: contactInfo,
-      [externalSlotKey + "_payment"]: "unpaid",
-      [externalSlotKey + "_" + space]: currentPeople.join("、"),
-      [externalSlotKey + "_" + space + "_private"]: privateSpace,
-      [externalSlotKey]: note
-    };
+    slotsToSave.forEach(slot => {
+      const field = slot + "_" + space;
+      const currentPeople = splitPeople(obj[field]);
+      currentPeople.push(externalSlotKey === "allDay" ? purpose + "（整天）" : purpose);
+
+      patch[slot + "_source"] = source;
+      patch[slot + "_contactName"] = contactName;
+      patch[slot + "_contactInfo"] = contactInfo;
+      patch[slot + "_payment"] = payment;
+      patch[slot + "_" + space] = currentPeople.join("、");
+      patch[slot + "_" + space + "_private"] = privateSpace;
+      patch[slot] = note;
+    });
 
     await saveSlotToCloud(externalDateKey, patch);
     closeExternalRegister();
-    alert("已送出空間登記。此登記目前為未匯款／空間預訂中，確認匯款後才算預約成功。");
+
+    if(externalRegisterMode === "contract"){
+      alert("已完成特約空間登記。");
+    }else{
+      alert("已送出空間登記。此登記目前為未匯款／空間預訂中，確認匯款後才算預約成功。");
+    }
   }
 
 
@@ -2564,6 +2639,17 @@ import {
     document.getElementById("modeB").onclick = () => setMode("b");
     document.getElementById("closeExternalRegister").onclick = closeExternalRegister;
     document.getElementById("saveExternalRegister").onclick = saveExternalRegister;
+    document.getElementById("contractRegisterBtn").onclick = () => {
+      const pwd = prompt("請輸入特約登記密碼");
+      if(!pwd) return;
+
+      if(!contractPasswords.includes(pwd.trim())){
+        alert("特約密碼錯誤");
+        return;
+      }
+
+      openExternalRegister(dateKey(1), "morning", "contract");
+    };
     const identity = document.getElementById("adminIdentity");
     if(identity){
       identity.onclick = () => {

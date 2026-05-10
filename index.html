@@ -1603,6 +1603,20 @@ select option[disabled]{
 }
 </style>
 
+
+<style>
+/* v41 management space detail */
+.mode-a .slot{
+  min-height:64px !important;
+}
+.admin-detail{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  line-height:1.25 !important;
+}
+</style>
+
 </head>
 <body>
   <div class="app">
@@ -1676,9 +1690,9 @@ select option[disabled]{
         </div>
         <div class="mini-calendar" id="externalMiniCalendar"></div>
         <div class="mini-calendar-legend">
-          <span><i class="mini-dot mini-green"></i>41 有空間</span>
-          <span><i class="mini-dot mini-orange"></i>41 時段不多</span>
-          <span><i class="mini-dot mini-red"></i>41 無空間</span>
+          <span><i class="mini-dot mini-green"></i>有空間</span>
+          <span><i class="mini-dot mini-orange"></i>空間不多</span>
+          <span><i class="mini-dot mini-red"></i>無空間</span>
         </div>
         <div class="hint" id="externalAvailabilityHint"></div>
       </div>
@@ -2016,9 +2030,6 @@ import {
 
   function makeAdminDetail(obj, slot){
     const rows = [];
-    const front = obj?.[slot + "_front39"] || "";
-    const back = obj?.[slot + "_back39"] || "";
-    const room41 = obj?.[slot + "_room41"] || "";
     const source = obj?.[slot + "_source"] || "";
     const payment = obj?.[slot + "_payment"] || "paid";
     const note = obj?.[slot] || "";
@@ -2028,14 +2039,24 @@ import {
     if(payment === "unpaid") paymentLabel = "｜未匯款";
     if(payment === "cancelled") paymentLabel = "｜已取消";
 
-    function privacy(spaceKey){
+    function rowFor(spaceKey, label){
+      const raw = obj?.[slot + "_" + spaceKey] || "";
+      const list = splitPeople(raw);
+      const cap = spaceCapacity(obj, slot, spaceKey);
       const isPrivate = obj?.[slot + "_" + spaceKey + "_private"] === true || obj?.[slot + "_" + spaceKey + "_private"] === "yes";
-      return isPrivate ? "🔒" : "";
+      const privacy = isPrivate ? "🔒" : "";
+
+      if(list.length){
+        return `${label}｜${privacy}${prefix}${list.join("、")}${paymentLabel}｜${list.length}/${cap}`;
+      }
+
+      return `${label}｜空｜0/${cap}`;
     }
 
-    if(front) rows.push("39前｜" + privacy("front39") + prefix + front + paymentLabel);
-    if(back) rows.push("39後｜" + privacy("back39") + prefix + back + paymentLabel);
-    if(room41) rows.push("41｜" + privacy("room41") + prefix + room41 + paymentLabel);
+    rows.push(rowFor("front39", "39前"));
+    rows.push(rowFor("back39", "39後"));
+    rows.push(rowFor("room41", "41"));
+
     if(note) rows.push("備註｜" + note);
 
     return rows.join("<br>");
@@ -2561,7 +2582,7 @@ import {
     const availabilityHint = document.getElementById("externalAvailabilityHint");
     if(availabilityHint){
       const count = externalVisibleSlotCountForDate(selectedDate);
-      availabilityHint.textContent = selectedDate ? `當日 41 可選時段數：${count} 個` : "";
+      availabilityHint.textContent = selectedDate ? `當日可選時段數：${count} 個` : "";
     }
 
     slotSelect.innerHTML = "";

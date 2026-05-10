@@ -1568,6 +1568,29 @@ h1{
 }
 </style>
 
+
+<style>
+/* v37 mini calendar month navigation */
+.mini-calendar-nav{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+  margin:6px 0 8px;
+}
+.mini-calendar-nav button{
+  padding:7px 10px;
+  font-size:13px;
+  border-radius:10px;
+}
+#miniMonthTitle{
+  text-align:center;
+  color:#6b4b40;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+</style>
+
 </head>
 <body>
   <div class="app">
@@ -1634,6 +1657,11 @@ h1{
       <div class="row">
         <label>日期</label>
         <select id="externalDate" style="display:none"></select>
+        <div class="mini-calendar-nav">
+          <button type="button" id="miniPrevMonth">‹ 上個月</button>
+          <div id="miniMonthTitle">月份</div>
+          <button type="button" id="miniNextMonth">下個月 ›</button>
+        </div>
         <div class="mini-calendar" id="externalMiniCalendar"></div>
         <div class="mini-calendar-legend">
           <span><i class="mini-dot mini-green"></i>有空間</span>
@@ -1869,6 +1897,10 @@ import {
     return `${ymKey()}-${String(day).padStart(2,"0")}`;
   }
 
+  function dateKeyFromExternalMonth(day){
+    return `${externalCalendarDate.getFullYear()}-${String(externalCalendarDate.getMonth()+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  }
+
   function monthRef(){
     return doc(db, "months", ymKey());
   }
@@ -2084,7 +2116,7 @@ import {
     }
 
     for(let d=1; d<=days; d++){
-      const dk = dateKey(d);
+      const dk = dateKeyFromExternalMonth(d);
       const obj = monthData.days?.[dk] || {};
       const dow = new Date(y,m,d).getDay();
       const today = new Date();
@@ -2304,6 +2336,7 @@ import {
   let externalDateKey = "";
   let externalSlotKey = "morning";
   let externalRegisterMode = "external";
+  let externalCalendarDate = new Date(current.getFullYear(), current.getMonth(), 1);
   const contractPasswords = ["teyue","TEYUE","特約"];
 
   function availableSpacesForSlot(dk, slot){
@@ -2341,12 +2374,12 @@ import {
 
   function getAvailableDateSlotMap(){
     const map = {};
-    const y = current.getFullYear();
-    const m = current.getMonth();
+    const y = externalCalendarDate.getFullYear();
+    const m = externalCalendarDate.getMonth();
     const days = new Date(y, m + 1, 0).getDate();
 
     for(let d = 1; d <= days; d++){
-      const dk = dateKey(d);
+      const dk = dateKeyFromExternalMonth(d);
       slotOrder.forEach(slot => {
         if(availableSpacesForSlot(dk, slot).length > 0){
           if(!map[dk]) map[dk] = [];
@@ -2383,11 +2416,13 @@ import {
     const dateSelect = document.getElementById("externalDate");
     if(!mini || !dateSelect) return;
 
-    const y = current.getFullYear();
-    const m = current.getMonth();
+    const y = externalCalendarDate.getFullYear();
+    const m = externalCalendarDate.getMonth();
     const firstDay = new Date(y, m, 1).getDay();
     const days = new Date(y, m + 1, 0).getDate();
     const weekNames = ["日","一","二","三","四","五","六"];
+    const miniTitle = document.getElementById("miniMonthTitle");
+    if(miniTitle) miniTitle.textContent = `${y}年${m+1}月`;
 
     mini.innerHTML = "";
 
@@ -2441,6 +2476,41 @@ import {
     }
   }
 
+  function rebuildExternalDateOptions(){
+    const map = getAvailableDateSlotMap();
+    const dateKeys = Object.keys(map).sort();
+    const dateSelect = document.getElementById("externalDate");
+
+    dateSelect.innerHTML = "";
+    dateKeys.forEach(date => {
+      const opt = document.createElement("option");
+      opt.value = date;
+      opt.textContent = date;
+      dateSelect.appendChild(opt);
+    });
+
+    if(dateKeys.length === 0){
+      externalDateKey = "";
+      externalSlotKey = "";
+      renderExternalMiniCalendar();
+      const slotSelect = document.getElementById("externalSlot");
+      const spaceSelect = document.getElementById("externalSpace");
+      if(slotSelect) slotSelect.innerHTML = "";
+      if(spaceSelect) spaceSelect.innerHTML = "";
+      const availabilityHint = document.getElementById("externalAvailabilityHint");
+      if(availabilityHint) availabilityHint.textContent = "此月份目前沒有可登記空間。";
+      return;
+    }
+
+    if(!dateKeys.includes(externalDateKey)){
+      externalDateKey = dateKeys[0];
+    }
+
+    dateSelect.value = externalDateKey;
+    externalSlotKey = (map[externalDateKey] || []).includes(externalSlotKey) ? externalSlotKey : (map[externalDateKey] || [])[0] || "";
+    renderExternalSlotsAndSpaces();
+  }
+
   function renderExternalSlotsAndSpaces(){
     const dateSelect = document.getElementById("externalDate");
     const slotSelect = document.getElementById("externalSlot");
@@ -2487,6 +2557,10 @@ import {
 
   function openExternalRegister(dk, slot, mode = "external"){
     externalRegisterMode = mode;
+    if(dk){
+      const parts = dk.split("-").map(Number);
+      if(parts.length >= 2) externalCalendarDate = new Date(parts[0], parts[1]-1, 1);
+    }
 
     const modal = document.getElementById("externalRegisterModal");
     modal.classList.toggle("contract-active", mode === "contract");
@@ -2504,18 +2578,7 @@ import {
     externalDateKey = map[dk] ? dk : dateKeys[0];
     externalSlotKey = (map[externalDateKey] || []).includes(slot) ? slot : map[externalDateKey][0];
 
-    const dateSelect = document.getElementById("externalDate");
-    dateSelect.innerHTML = "";
-
-    dateKeys.forEach(date => {
-      const opt = document.createElement("option");
-      opt.value = date;
-      opt.textContent = date;
-      dateSelect.appendChild(opt);
-    });
-
-    dateSelect.value = externalDateKey;
-    renderExternalSlotsAndSpaces();
+    rebuildExternalDateOptions();
 
     document.getElementById("externalPurpose").value = "";
     document.getElementById("externalPrivate").value = "no";
@@ -2532,6 +2595,16 @@ import {
     document.getElementById("externalSlot").onchange = () => {
       externalSlotKey = document.getElementById("externalSlot").value;
       renderExternalSlotsAndSpaces();
+    };
+
+    document.getElementById("miniPrevMonth").onclick = () => {
+      externalCalendarDate.setMonth(externalCalendarDate.getMonth() - 1);
+      rebuildExternalDateOptions();
+    };
+
+    document.getElementById("miniNextMonth").onclick = () => {
+      externalCalendarDate.setMonth(externalCalendarDate.getMonth() + 1);
+      rebuildExternalDateOptions();
     };
 
     document.getElementById("externalRegisterModal").classList.add("show");

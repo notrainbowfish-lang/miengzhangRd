@@ -1640,6 +1640,7 @@ h1{
           <span><i class="mini-dot mini-orange"></i>空間不多</span>
           <span><i class="mini-dot mini-red"></i>無空間</span>
         </div>
+        <div class="hint" id="externalAvailabilityHint"></div>
       </div>
       <div class="row">
         <label>時段</label>
@@ -1906,7 +1907,13 @@ import {
 
   function splitPeople(text){
     if(!text) return [];
-    return String(text).split(/[、,，\/＋+]/).map(x => x.trim()).filter(Boolean);
+    return String(text)
+      .replaceAll("<br>", "、")
+      .replaceAll("<br/>", "、")
+      .replaceAll("<br />", "、")
+      .split(/[、,，\/＋+;；\n｜|]/)
+      .map(x => x.trim())
+      .filter(Boolean);
   }
 
   function spaceCapacity(obj, slot, spaceKey){
@@ -2301,9 +2308,14 @@ import {
 
   function availableSpacesForSlot(dk, slot){
     const obj = monthData.days?.[dk] || {};
-    const statusKey = deriveSlotStatus(obj, slot);
+    const special = obj?.[slot + "_special"] || "normal";
 
-    if(statusKey === "full" || statusKey === "unavailable" || statusKey === "closed"){
+    if(special === "closed" || special === "unavailable"){
+      return [];
+    }
+
+    const statusKey = deriveSlotStatus(obj, slot);
+    if(statusKey === "full"){
       return [];
     }
 
@@ -2311,12 +2323,13 @@ import {
     if(!isSpaceFull(obj, slot, "front39")) spaces.push("front39");
     if(!isSpaceFull(obj, slot, "back39")) spaces.push("back39");
     if(!isSpaceFull(obj, slot, "room41")) spaces.push("room41");
+
     return spaces;
   }
 
   function availableSpacesForAllDay(dk){
-    const labels = ["front39","back39","room41"];
-    return labels.filter(space => {
+    const spaces = ["front39","back39","room41"];
+    return spaces.filter(space => {
       return ["morning","afternoon","evening"].every(slot => availableSpacesForSlot(dk, slot).includes(space));
     });
   }
@@ -2358,6 +2371,13 @@ import {
     return count;
   }
 
+  function availableLevelForDate(dk){
+    const count = availableSpaceCountForDate(dk);
+    if(count <= 0) return "red";
+    if(count <= 3) return "orange";
+    return "green";
+  }
+
   function renderExternalMiniCalendar(){
     const mini = document.getElementById("externalMiniCalendar");
     const dateSelect = document.getElementById("externalDate");
@@ -2387,16 +2407,17 @@ import {
     for(let d = 1; d <= days; d++){
       const dk = dateKey(d);
       const count = availableSpaceCountForDate(dk);
+      const level = availableLevelForDate(dk);
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "mini-day";
       btn.textContent = d;
 
-      if(count <= 0){
+      if(level === "red"){
         btn.classList.add("red");
         btn.disabled = true;
-      }else if(count <= 2){
+      }else if(level === "orange"){
         btn.classList.add("orange");
       }else{
         btn.classList.add("green");
@@ -2428,6 +2449,11 @@ import {
 
     const selectedDate = dateSelect.value;
     const availableSlots = map[selectedDate] || [];
+    const availabilityHint = document.getElementById("externalAvailabilityHint");
+    if(availabilityHint){
+      const count = availableSpaceCountForDate(selectedDate);
+      availabilityHint.textContent = selectedDate ? `當日剩餘可登記空間數：約 ${count} 格` : "";
+    }
 
     slotSelect.innerHTML = "";
     availableSlots.forEach(slot => {

@@ -58,34 +58,6 @@ aside{border-left:1px solid var(--line);padding:22px;background:rgba(255,250,246
 </div>
 
 
-<div class="modal" id="contractBookingModal">
-  <div class="box">
-    <h3>特約登記</h3>
-    <div class="row"><label>日期</label><input id="contractBookingDate" type="date"></div>
-    <div class="row">
-      <label>時段</label>
-      <select id="contractBookingPeriod">
-        <option value="morning">上午</option>
-        <option value="afternoon">下午</option>
-        <option value="evening">晚上</option>
-        <option value="allDay">整天</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>空間</label>
-      <select id="contractBookingSpace">
-        <option value="front39">39前</option>
-        <option value="back39">39後</option>
-        <option value="room41">41</option>
-      </select>
-    </div>
-    <div class="row"><label>用途</label><input id="contractBookingPurpose" placeholder="牌卡、療癒、課程"></div>
-    <label class="check"><input type="checkbox" id="contractBookingPrivate">私密使用</label>
-    <div class="actions">
-      <button type="button" id="closeContractBooking">取消</button>
-      <button type="button" id="saveContractBooking">送出特約登記</button>
-    </div>
-  </div>
 </div>
 
 
@@ -117,6 +89,8 @@ const firebaseConfig = {
 };
 const READY=firebaseConfig.apiKey&&!firebaseConfig.apiKey.includes("PASTE_");
 const app=READY?initializeApp(firebaseConfig):null, db=READY?getFirestore(app):null;
+function bindClick(id,fn){const el=$(id); if(el) el.onclick=fn;}
+
 const $=id=>document.getElementById(id), CAP={front39:3,back39:1,room41:1}, SL={front39:"39前",back39:"39後",room41:"41"}, PL={morning:"上午",afternoon:"下午",evening:"晚上",allDay:"整天"}, PERIODS=["morning","afternoon","evening"], WD=["日","一","二","三","四","五","六"];
 let current=new Date();current.setDate(1);let miniCurrent=new Date();miniCurrent.setDate(1);let bookings=[],spaces={},contractSchedules=[],externalRequests=[],bookingRequests=[],contractMembers=[],unsubs=[],mode="view",adminName=localStorage.getItem("mz-admin")||"",activeContract=null,settings={spaceInfo:"39前：3 格，可內部多人使用\n39後：1 格\n41：1 格，外部共享主要開放空間\n私密：鎖定該空間\n整天：覆蓋上午／下午／晚上",announcement:"特約資格依每月合約匯款狀態啟用。外部共享匯款資訊由管理員聯繫提供。"};
 function ym(d=current){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
@@ -395,38 +369,35 @@ openExternal(dk(new Date().getDate()),"morning")
 function sub(ref,ok){return onSnapshot(ref,ok,err=>{$("syncStatus").textContent="Firestore 連線錯誤："+err.message;console.error(err)})}
 function subscribe(){unsubs.forEach(f=>f());unsubs=[];if(!READY){render();return}let r=range();unsubs.push(sub(collection(db,"spaces"),s=>{spaces={};s.forEach(d=>spaces[d.id]=d.data());render()}));unsubs.push(sub(query(collection(db,"bookings"),where("date",">=",r.start),where("date","<=",r.end)),s=>{bookings=[];s.forEach(d=>bookings.push({id:d.id,...d.data()}));render()}));unsubs.push(sub(collection(db,"contractMembers"),s=>{contractMembers=[];s.forEach(d=>contractMembers.push({id:d.id,...d.data()}));renderLists()}));unsubs.push(sub(collection(db,"contractSchedules"),s=>{contractSchedules=[];s.forEach(d=>contractSchedules.push({id:d.id,...d.data()}));render()}));unsubs.push(sub(query(collection(db,"externalRequests"),where("status","==","pending")),s=>{externalRequests=[];s.forEach(d=>externalRequests.push({id:d.id,...d.data()}));renderLists()}));unsubs.push(sub(query(collection(db,"bookingRequests"),where("status","==","pending")),s=>{bookingRequests=[];s.forEach(d=>bookingRequests.push({id:d.id,...d.data()}));renderLists()}));unsubs.push(sub(doc(db,"settings","main"),s=>{if(s.exists())settings={...settings,...s.data()};renderSettings()}))}
 
-async function saveContractBooking(){
-if(!READY){alert("請先貼 firebaseConfig");return}
-if(!activeContract){alert("請先登入特約");return}
-const date=$("contractBookingDate").value;
-if(!date){alert("請選擇日期");return}
-await addDoc(collection(db,"bookings"),{
-date,
-period:$("contractBookingPeriod").value,
-space:$("contractBookingSpace").value,
-source:"特約",
-manager:activeContract.name,
-purpose:$("contractBookingPurpose").value.trim()||"特約使用",
-privateSpace:$("contractBookingPrivate").checked,
-paymentStatus:"contract",
-status:"confirmed",
-contractMember:activeContract.account,
-createdAt:serverTimestamp()
-});
-$("contractBookingModal").classList.remove("show");
-alert("特約登記完成");
+function bind(){
+bindClick("adminBtn",()=>{let p=prompt("請輸入管理密碼");if(!p)return;if(!["qianlai","Qianlai","QIANLAI"].includes(p.trim())){alert("密碼錯誤");return}let n=prompt("你是工作室裡的誰？",adminName||"");if(!n)return;adminName=n.trim();localStorage.setItem("mz-admin",adminName);setMode("admin")});
+bindClick("viewBtn",()=>setMode("view"));
+bindClick("prevBtn",()=>{current.setMonth(current.getMonth()-1);subscribe()});
+bindClick("nextBtn",()=>{current.setMonth(current.getMonth()+1);subscribe()});
+bindClick("externalBtn",()=>openExternal(dk(new Date().getDate()),"morning"));
+bindClick("contractBtn",()=>$("contractModal").classList.add("show"));
+bindClick("contractRegisterBtn",()=>$("contractRegisterModal").classList.add("show"));
+bindClick("closeContractRegister",()=>$("contractRegisterModal").classList.remove("show"));
+bindClick("saveContractRegister",saveContractRegister);
+bindClick("closeContract",()=>$("contractModal").classList.remove("show"));
+bindClick("loginContract",loginContract);
+bindClick("closeAdmin",()=>$("adminModal").classList.remove("show"));
+bindClick("saveAdmin",saveAdmin);
+bindClick("clearAdmin",async()=>{if(confirm("確定清除此時段？")){await delPeriod($("adminDate").value,$("adminPeriod").value);$("adminModal").classList.remove("show")}});
+bindClick("closeExt",()=>$("externalModal").classList.remove("show"));
+bindClick("saveExt",saveExt);
+bindClick("miniPrev",()=>{miniCurrent.setMonth(miniCurrent.getMonth()-1);renderMini()});
+bindClick("miniNext",()=>{miniCurrent.setMonth(miniCurrent.getMonth()+1);renderMini()});
+bindClick("adminMiniPrev",()=>{adminMiniCurrent.setMonth(adminMiniCurrent.getMonth()-1);renderAdminMini();rebuildAdminPeriodOptions()});
+bindClick("adminMiniNext",()=>{adminMiniCurrent.setMonth(adminMiniCurrent.getMonth()+1);renderAdminMini();rebuildAdminPeriodOptions()});
+if($("frontPrivate"))$("frontPrivate").onchange=syncFrontPrivateUI;
+if($("adminPeriod"))$("adminPeriod").onchange=()=>rebuildAdminPeriodOptions($("adminPeriod").value);
+bindClick("editSpaceInfo",()=>openSettingsEditor("spaceInfo","編輯空間說明"));
+bindClick("editAnnouncement",()=>openSettingsEditor("announcement","編輯公告"));
+bindClick("closeSettings",()=>$("settingsModal").classList.remove("show"));
+bindClick("saveSettings",saveSettings);
+bindClick("exportBtn",async()=>{let c=await html2canvas($("capture"),{scale:2,backgroundColor:"#fffaf6",ignoreElements:e=>e.classList&&e.classList.contains("no-capture")});let a=document.createElement("a");a.download=`${ym()}-共享空間狀態.png`;a.href=c.toDataURL("image/png");a.click()});
 }
-
-function bind(){$("adminBtn").onclick=()=>{let p=prompt("請輸入管理密碼");if(!p)return;if(!["qianlai","Qianlai","QIANLAI"].includes(p.trim())){alert("密碼錯誤");return}let n=prompt("你是工作室裡的誰？",adminName||"");if(!n)return;adminName=n.trim();localStorage.setItem("mz-admin",adminName);setMode("admin")};$("viewBtn").onclick=()=>setMode("view");$("prevBtn").onclick=()=>{current.setMonth(current.getMonth()-1);subscribe()};$("nextBtn").onclick=()=>{current.setMonth(current.getMonth()+1);subscribe()};$("externalBtn").onclick=()=>openExternal(dk(new Date().getDate()),"morning");$("contractBtn").onclick=()=>$("contractModal").classList.add("show");$("contractBookingBtn").onclick=()=>{if(!activeContract){alert("請先登入特約");return}$("contractBookingModal").classList.add("show")};$("closeContractBooking").onclick=()=>$("contractBookingModal").classList.remove("show");$("saveContractBooking").onclick=saveContractBooking;$("contractRegisterBtn").onclick=()=>$("contractRegisterModal").classList.add("show");$("closeContractRegister").onclick=()=>$("contractRegisterModal").classList.remove("show");$("saveContractRegister").onclick=saveContractRegister;$("closeContract").onclick=()=>$("contractModal").classList.remove("show");$("loginContract").onclick=loginContract;$("closeAdmin").onclick=()=>$("adminModal").classList.remove("show");$("saveAdmin").onclick=saveAdmin;$("clearAdmin").onclick=async()=>{if(confirm("確定清除此時段？")){await delPeriod($("adminDate").value,$("adminPeriod").value);$("adminModal").classList.remove("show")}};$("closeExt").onclick=()=>$("externalModal").classList.remove("show");$("saveExt").onclick=saveExt;$("miniPrev").onclick=()=>{miniCurrent.setMonth(miniCurrent.getMonth()-1);renderMini()};$("miniNext").onclick=()=>{miniCurrent.setMonth(miniCurrent.getMonth()+1);renderMini()};
-$("adminMiniPrev").onclick=()=>{adminMiniCurrent.setMonth(adminMiniCurrent.getMonth()-1);renderAdminMini();rebuildAdminPeriodOptions()};
-$("adminMiniNext").onclick=()=>{adminMiniCurrent.setMonth(adminMiniCurrent.getMonth()+1);renderAdminMini();rebuildAdminPeriodOptions()};
-$("frontPrivate").onchange=syncFrontPrivateUI;
-$("adminPeriod").onchange=()=>rebuildAdminPeriodOptions($("adminPeriod").value);
-if($("editSpaceInfo"))$("editSpaceInfo").onclick=()=>openSettingsEditor("spaceInfo","編輯空間說明");
-if($("editAnnouncement"))$("editAnnouncement").onclick=()=>openSettingsEditor("announcement","編輯公告");
-if($("closeSettings"))$("closeSettings").onclick=()=>$("settingsModal").classList.remove("show");
-if($("saveSettings"))$("saveSettings").onclick=saveSettings;
-$("exportBtn").onclick=async()=>{let c=await html2canvas($("capture"),{scale:2,backgroundColor:"#fffaf6",ignoreElements:e=>e.classList&&e.classList.contains("no-capture")});let a=document.createElement("a");a.download=`${ym()}-共享空間狀態.png`;a.href=c.toDataURL("image/png");a.click()}}
 bind();subscribe();setMode("view");
 })();
 </script>

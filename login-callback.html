@@ -1,1 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>LINE 登入中...</title>
+</head>
+<body>
 
+<h2>LINE 登入處理中...</h2>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+
+const code = params.get("code");
+
+console.log("LINE CODE:", code);
+
+document.body.innerHTML += `
+<p>LINE Login 成功</p>
+<p>Code：${code}</p>
+`;
+</script>
+
+</body>
+</html>

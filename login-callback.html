@@ -2,23 +2,208 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>LINE 登入處理中</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LINE 會員註冊</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+  margin:0;
+  background:#fffaf6;
+  font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;
+  color:#4b3128;
+}
+
+.wrap{
+  max-width:700px;
+  margin:40px auto;
+  background:white;
+  border-radius:24px;
+  padding:32px;
+  border:1px solid #ead9cd;
+}
+
+h1{
+  text-align:center;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.row{
+  margin:12px 0;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  box-sizing:border-box;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  background:#d8b7a3;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.info{
+  margin-bottom:20px;
+  background:#fff4ed;
+  padding:16px;
+  border-radius:14px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>LINE 登入處理中...</h2>
+<div class="wrap">
+
+<h1>首次 LINE 登入</h1>
+
+<div class="info">
+已收到 LINE 登入資訊。<br>
+請先建立會員資料。
+</div>
+
+<div class="grid">
+
+<div class="row">
+帳號
+<input id="account">
+</div>
+
+<div class="row">
+密碼
+<input id="password" type="password">
+</div>
+
+<div class="row">
+確認密碼
+<input id="password2" type="password">
+</div>
+
+<div class="row">
+姓名
+<input id="name">
+</div>
+
+<div class="row">
+生日
+<input id="birthday" type="date">
+</div>
+
+<div class="row">
+電話
+<input id="phone">
+</div>
+
+<div class="row" style="grid-column:1 / -1;">
+地址
+<input id="address">
+</div>
+
+</div>
+
+<button id="registerBtn">
+建立會員
+</button>
+
+<div id="msg"></div>
+
+</div>
 
 <script>
-const params = new URLSearchParams(location.search);
 
-const code = params.get("code");
-const state = params.get("state");
+const SUPABASE_URL =
+'https://ydseiiolfmekvhpcplua.supabase.co';
 
-document.body.innerHTML += `
-<p>已收到 LINE 回傳。</p>
-<p>code：${code || "沒有收到"}</p>
-<p>state：${state || "沒有收到"}</p>
-`;
+const SUPABASE_KEY =
+'sb_publishable_SmBYBYW2zSddH5CiJ-HDZA_yrZ9CfBp';
+
+const supabaseClient =
+supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const params =
+new URLSearchParams(location.search);
+
+const lineCode =
+params.get("code");
+
+document
+.getElementById("registerBtn")
+.onclick = async () => {
+
+const account =
+document.getElementById("account").value.trim();
+
+const password =
+document.getElementById("password").value.trim();
+
+const password2 =
+document.getElementById("password2").value.trim();
+
+const name =
+document.getElementById("name").value.trim();
+
+const birthday =
+document.getElementById("birthday").value;
+
+const phone =
+document.getElementById("phone").value.trim();
+
+const address =
+document.getElementById("address").value.trim();
+
+if(password !== password2){
+  alert("兩次密碼不一致");
+  return;
+}
+
+const { error } =
+await supabaseClient
+.from("users")
+.insert({
+  account,
+  password,
+  name,
+  birthday,
+  phone,
+  address,
+  line_code: lineCode,
+  line_linked: true,
+  status:"active"
+});
+
+if(error){
+  document.getElementById("msg").innerHTML =
+  "建立失敗：" + error.message;
+  return;
+}
+
+document.getElementById("msg").innerHTML =
+"會員建立成功，正在返回首頁...";
+
+setTimeout(()=>{
+  location.href="/";
+},1500);
+
+};
+
 </script>
 
 </body>

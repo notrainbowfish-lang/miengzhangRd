@@ -2,22 +2,22 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>LINE 登入中...</title>
+<title>LINE 登入處理中</title>
 </head>
 <body>
 
 <h2>LINE 登入處理中...</h2>
 
 <script>
-const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(location.search);
 
 const code = params.get("code");
-
-console.log("LINE CODE:", code);
+const state = params.get("state");
 
 document.body.innerHTML += `
-<p>LINE Login 成功</p>
-<p>Code：${code}</p>
+<p>已收到 LINE 回傳。</p>
+<p>code：${code || "沒有收到"}</p>
+<p>state：${state || "沒有收到"}</p>
 `;
 </script>
 

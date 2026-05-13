@@ -16,6 +16,30 @@ button{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-r
 .calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.weekday{height:38px;display:grid;place-items:center;background:#fbefe8;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.weekday:nth-child(7n),.day:nth-child(7n){border-right:none}.weekday.sun{background:var(--sun)}.weekday.sat{background:var(--sat)}.day{min-height:155px;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fffdf9}.day.empty{background:#ffffff55}.day.today{outline:3px solid #d88a1d73;outline-offset:-4px}.day-num{font-size:19px;font-weight:700;margin-bottom:7px}.status-card{border:1px solid var(--line);background:#fff;border-radius:12px;margin:6px 0;padding:7px;font-size:13px;cursor:pointer}.status-card:hover{background:#fff8f2}.space-line{display:grid;grid-template-columns:42px 1fr;gap:4px;align-items:center}.lights{letter-spacing:.08em;font-size:16px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.row{display:grid;gap:6px;margin:10px 0}label{font-size:14px;color:#74584d}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 10px;font:inherit;color:var(--ink)}textarea{min-height:88px}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}.hint{font-size:12px;color:#9b7f73;line-height:1.5}.modal{position:fixed;inset:0;background:#28191247;display:none;align-items:flex-start;justify-content:center;z-index:80;overflow:auto;padding:18px 0}.modal.show{display:flex}.box{width:min(760px,calc(100vw - 24px));background:#fffdf9;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 25px 60px #28191233}.check{display:flex;gap:8px;align-items:center}.check input{width:auto}
 @media(max-width:1000px){header{grid-template-columns:1fr;text-align:center}.brand{justify-content:center}.controls{justify-content:center}.content{grid-template-columns:1fr}aside{border-left:none;border-top:1px solid var(--line)}}@media(max-width:640px){.app{padding:8px}.grid2,.grid3{grid-template-columns:1fr}.day{min-height:132px;padding:5px}.controls button{flex:1 1 45%}}
+
+/* ===== v6 UX optimization patch ===== */
+.brand-title{line-height:1.45;word-break:keep-all}
+h1{line-height:1.55;word-break:keep-all;white-space:normal}
+.status-card{min-height:auto;padding:8px 9px}
+.space-line{display:flex!important;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.space-line span:first-child{flex:0 0 auto;white-space:nowrap}
+.lights{flex:0 0 auto;white-space:nowrap;letter-spacing:.04em}
+.price-compact{display:grid;gap:8px}
+.price-pill{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fffdf9;line-height:1.6}
+.price-pill b{font-size:15px}
+@media(max-width:640px){
+  header{padding:22px 18px}
+  .brand{align-items:flex-start}
+  .brand-title{font-size:19px;letter-spacing:.08em}
+  .brand-sub{font-size:12px}
+  h1{font-size:25px;letter-spacing:.08em}
+  .calendar{grid-template-columns:repeat(7,minmax(96px,1fr));overflow-x:auto}
+  .day{min-width:96px;min-height:168px}
+  .status-card{padding:8px 7px;margin:6px 0}
+  .space-line{display:flex!important;justify-content:space-between;align-items:center;gap:6px}
+  .lights{font-size:14px}
+}
+
 </style>
 </head>
 <body>
@@ -23,7 +47,7 @@ button{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-r
 <header><div class="brand"><div class="logo">✧</div><div><div class="brand-title">鈺沐身心靈美學共享工作室</div><div class="brand-sub">・Mind Body Spirit Shared Studio・</div></div></div><h1><span id="titleYM"></span>　共享空間預約系統</h1><div class="controls"><button id="prevBtn">‹ 上個月</button><button id="nextBtn">下個月 ›</button><button id="lineLoginBtn">LINE 登入</button><button id="memberLoginBtn">會員測試登入</button><button id="adminBtn">管理員</button><span id="sessionBadge" class="badge"></span></div></header>
 <div class="content"><main>
 <div class="nav"><button data-view="publicView" class="active">共享月曆</button><button data-view="memberProfileView">會員資料</button><button data-view="myBookingsView">我的預約</button><button data-view="priceView">空間價格</button><button data-view="noticeView">公告</button></div>
-<div class="nav admin-nav"><button data-view="adminCalendarView">管理月曆</button><button data-view="requestsView">預約審核</button><button data-view="membersView">會員管理</button><button data-view="contractSettingView" class="perm-core">特約設定</button><button data-view="siteSettingView" class="perm-core">公告／折數</button><button data-view="managersView" class="perm-root">管理員管理</button><button data-view="historyView">歷史紀錄</button></div>
+<div class="nav admin-nav"><button data-view="adminCalendarView">管理月曆</button><button data-view="requestsView">預約審核</button><button data-view="membersView">會員管理</button><button data-view="contractSettingView" class="perm-core">特約設定</button><button data-view="siteSettingView" class="perm-core">系統設定</button><button data-view="managersView" class="perm-root">管理員管理</button><button data-view="historyView">歷史紀錄</button></div>
 <section id="publicView" class="view active"><div class="legend"><span><i class="dot g"></i>可預約</span><span><i class="dot y"></i>申請中／部分使用</span><span><i class="dot r"></i>正式預約或已滿</span></div><div id="publicCalendar" class="calendar"></div></section>
 <section id="memberProfileView" class="view"><h2>會員資料</h2><div id="memberProfileContent" class="panel"></div></section>
 <section id="myBookingsView" class="view"><h2>我的預約</h2><div id="myBookingsList"></div></section>
@@ -33,7 +57,7 @@ button{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-r
 <section id="requestsView" class="view"><h2>預約審核／匯款確認</h2><div id="requestsList"></div></section>
 <section id="membersView" class="view"><h2>會員管理</h2><div id="membersList"></div></section>
 <section id="contractSettingView" class="view"><h2>特約設定</h2><div id="contractsList"></div></section>
-<section id="siteSettingView" class="view"><h2>公告／活動折數</h2><div id="siteSettingContent" class="panel"></div></section>
+<section id="siteSettingView" class="view"><h2>系統設定</h2><div id="siteSettingContent" class="panel"></div></section>
 <section id="managersView" class="view"><h2>管理員管理</h2><div id="managersList"></div></section>
 <section id="historyView" class="view"><h2>歷史紀錄</h2><div id="historyList"></div></section>
 <div id="syncStatus" class="small" style="text-align:center;margin-top:14px;color:#8b6a5d">正在連線 Supabase...</div>
@@ -57,8 +81,97 @@ function setSession(s){session=s;document.body.classList.toggle("mode-admin",s.t
 function fillRequestSpaces(date){$("requestSpace").innerHTML=spaces.map(s=>`<option value="${s}">${labels[s]}｜${rowLights(date,s)}</option>`).join("")}function fillRequestPeriods(date,space){const ps=availablePeriods(date,space);$("requestPeriod").innerHTML=ps.map(p=>`<option value="${p}">${periodLabels[p]}</option>`).join("");$("requestLights").value=`上午 ${lightFor(date,"morning",space)}｜下午 ${lightFor(date,"afternoon",space)}｜晚上 ${lightFor(date,"evening",space)}`;$("privateWrap").style.display=(space==="39front"||space==="41")?"flex":"none";updateRequestPrice()}function updateRequestPrice(){const p=calcPrice($("requestDate").value,$("requestPriceType").value,session.user?.id);$("requestPrice").value=p.base?`$${p.final}（原價 $${p.base}｜${p.note}）`:"尚未設定價格"}function openRequest(date,space){$("requestTitle").textContent=session.type==="admin"?"管理新增正式預約":"空間預約申請";$("saveRequest").textContent=session.type==="admin"?"新增正式預約":"送出申請";$("requestDate").value=date;fillRequestSpaces(date);$("requestSpace").value=space;fillRequestPeriods(date,space);$("requestUser").value=session.user?.name||session.name||"管理員";$("requestContact").value=session.user?.phone||"";$("requestContent").value="";$("requestNote").value="";$("requestPrivate").checked=false;openModal("requestModal")}
 async function findUser(phone,birthday){const {data,error}=await supabaseClient.from("users").select("*").eq("phone",phone).eq("birthday",birthday).limit(1);if(error)throw error;return data?.[0]||null}async function loginMember(){try{const u=await findUser($("loginPhone").value.trim(),$("loginBirthday").value.trim());if(!u){alert("找不到會員資料");return}setSession({type:"member",role:"member",user:u,name:u.name});closeModal("memberLoginModal")}catch(e){alert("登入失敗："+e.message)}}async function quickRegister(){try{const phone=$("loginPhone").value.trim(),birthday=$("loginBirthday").value.trim();if(!phone||!birthday){alert("請先填手機與生日");return}const name=prompt("請輸入姓名","王小姐")||"未命名會員";const {data:u,error}=await supabaseClient.from("users").insert({name,phone,birthday,status:"active",line_linked:false}).select().single();if(error)throw error;await loadData();setSession({type:"member",role:"member",user:u,name:u.name});closeModal("memberLoginModal")}catch(e){alert("建立失敗："+e.message)}}function loginAdmin(){const name=$("adminName").value.trim(),pw=$("adminPassword").value.trim(),role=rootPw.includes(pw)?"root":corePw.includes(pw)?"core":managerPw.includes(pw)?"manager":"";if(!name||!role){alert("管理員名稱或密碼錯誤");return}setSession({type:"admin",role,user:null,name});closeModal("adminModal");switchView("adminCalendarView")}
 async function saveRequest(){try{const booking_date=$("requestDate").value,space=$("requestSpace").value,period=$("requestPeriod").value,usage_content=$("requestContent").value.trim();if(!period){alert("此空間沒有可申請時段");return}if(!usage_content){alert("請填寫使用內容");return}const payload={user_id:session.user?.id||null,space,period,private_space:$("requestPrivate").checked,usage_content,note:$("requestNote").value.trim(),booking_date};if(session.type==="admin"){const {error}=await supabaseClient.from("bookings").insert({...payload,status:"confirmed",payment_status:"paid",confirmed_at:new Date().toISOString()});if(error)throw error;alert("已新增正式預約。")}else{const {error}=await supabaseClient.from("external_requests").insert({...payload,status:"pending",payment_status:"unpaid"});if(error)throw error;alert("已送出申請，等待管理員確認。")}closeModal("requestModal");await loadData()}catch(e){alert("送出失敗："+e.message)}}
-async function updateProfile(){try{if(!session.user){alert("請先登入會員");return}const payload={name:$("profileName").value.trim(),birthday:$("profileBirthday").value,phone:$("profilePhone").value.trim(),address:$("profileAddress").value.trim()};const {error}=await supabaseClient.from("users").update(payload).eq("id",session.user.id);if(error)throw error;session.user={...session.user,...payload};await loadData();alert("會員資料已更新")}catch(e){alert("更新失敗："+e.message)}}async function confirmRequest(id){try{const r=requests.find(x=>x.id===id);if(!r)return;const {error:e1}=await supabaseClient.from("bookings").insert({user_id:r.user_id,space:r.space,period:r.period,private_space:r.private_space,usage_content:r.usage_content,note:r.note,status:"confirmed",payment_status:"paid",booking_date:r.booking_date,confirmed_at:new Date().toISOString()});if(e1)throw e1;const {error:e2}=await supabaseClient.from("external_requests").update({status:"confirmed",payment_status:"paid"}).eq("id",id);if(e2)throw e2;await supabaseClient.from("audit_logs").insert({action:"confirmBooking",target_type:"external_request",target_id:id,message:"確認匯款並轉正式預約"});await loadData()}catch(e){alert("確認失敗："+e.message)}}async function cancelRequest(id){try{const {error}=await supabaseClient.from("external_requests").update({status:"cancelled",payment_status:"cancelled"}).eq("id",id);if(error)throw error;await loadData()}catch(e){alert("取消失敗："+e.message)}}async function saveSiteSettings(){try{if(!canCore()){alert("核心管理員以上才可修改公告與折數");return}const id=setting().id,payload={announcement:$("settingAnnouncement").value,activity_discount_percent:Number($("settingDiscount").value||100),updated_at:new Date().toISOString()};const q=id?supabaseClient.from("site_settings").update(payload).eq("id",id):supabaseClient.from("site_settings").insert(payload);const {error}=await q;if(error)throw error;await loadData();alert("設定已更新")}catch(e){alert("更新失敗："+e.message)}}async function saveContract(userId){try{if(!canCore()){alert("核心管理員以上才可修改特約設定");return}const ex=contractMembers.find(c=>c.user_id===userId),payload={user_id:userId,status:"active",is_active:true,contract_end_date:prompt("特約期限 YYYY-MM-DD",ex?.contract_end_date||"2026-12-31"),contract_terms:prompt("特約條件",ex?.contract_terms||"每月4次"),discount_percent:Number(prompt("特約預約折數，例如90=9折",ex?.discount_percent||100)||100),monthly_allowed_count:Number(prompt("每月額度",ex?.monthly_allowed_count||4)||4),usage_type:prompt("計算方式 timeslot 或 day",ex?.usage_type||"timeslot")||"timeslot",manager_name:session.name};const q=ex?supabaseClient.from("contract_members").update(payload).eq("id",ex.id):supabaseClient.from("contract_members").insert(payload);const {error}=await q;if(error)throw error;await loadData()}catch(e){alert("特約設定失敗："+e.message)}}
-function renderMemberProfile(){const box=$("memberProfileContent");if(session.type==="guest"){box.innerHTML="請先登入會員。";return}if(session.type==="admin"){box.innerHTML="管理員模式請至會員管理查看資料。";return}const u=session.user,c=contractByUser(u.id);box.innerHTML=`<div class="grid2"><div class="row"><label>姓名</label><input id="profileName" value="${esc(u.name||"")}"></div><div class="row"><label>生日</label><input id="profileBirthday" type="date" value="${esc(u.birthday||"")}"></div><div class="row"><label>電話</label><input id="profilePhone" value="${esc(u.phone||"")}"></div><div class="row"><label>地址</label><input id="profileAddress" value="${esc(u.address||"")}"></div></div><div class="panel"><h2>系統身份資訊</h2><div class="small">會員身份：${c?"特約會員":"一般會員"}<br>特約期限：${esc(c?.contract_end_date||"無")}<br>特約條件：${esc(c?.contract_terms||"無")}<br>特約折數：${c?.discount_percent?`${c.discount_percent}%`:"無"}<br>特約額度：${c?.monthly_allowed_count||"無"} ${esc(c?.usage_type||"")}</div></div><div class="actions"><button onclick="updateProfile()">儲存會員資料</button></div>`}function renderMyBookings(){const box=$("myBookingsList");if(!session.user){box.innerHTML="請先登入會員。";return}const myB=bookings.filter(b=>b.user_id===session.user.id),myR=requests.filter(r=>r.user_id===session.user.id);box.innerHTML=[...myR.map(r=>`<div class="item">申請中｜${esc(r.booking_date)}｜${labels[r.space]}｜${periodLabels[r.period]}<br>${esc(r.usage_content||"")}</div>`),...myB.map(b=>`<div class="item">正式預約｜${esc(b.booking_date)}｜${labels[b.space]}｜${periodLabels[b.period]}<br>${esc(b.usage_content||"")}</div>`)].join("")||"目前沒有預約紀錄。"}function renderPrices(){const rows=pricingRules.map(p=>`<div class="item">${p.day_type==="weekday"?"平日":"假日"}｜${priceTypeLabels[p.price_type]||p.price_type}｜$${p.price}</div>`).join("");$("sidePrice").innerHTML=rows||"尚未設定價格。";$("priceList").innerHTML=(rows||"尚未設定價格。")+`<div class="item">目前活動折數：${setting().activity_discount_percent||100}%<br>特約會員以合約內容為主。</div>`}function renderNotice(){$("noticeContent").innerHTML=esc(setting().announcement||"暫無公告").replaceAll("\n","<br>");$("sideNotice").innerHTML=esc(setting().announcement||"暫無公告").replaceAll("\n","<br>")}function renderRequests(){const box=$("requestsList"),list=requests.filter(isPendingRequest);box.innerHTML=list.length?list.map(r=>{const u=userById(r.user_id);return`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>${esc(r.booking_date)}｜${labels[r.space]}｜${periodLabels[r.period]}<br>${esc(r.usage_content||"")}<br><button data-confirm="${r.id}">確認匯款轉正式</button><button data-cancel="${r.id}">取消</button></div>`}).join(""):"目前沒有待確認申請。";box.querySelectorAll("[data-confirm]").forEach(b=>b.onclick=()=>confirmRequest(b.dataset.confirm));box.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>cancelRequest(b.dataset.cancel))}function renderMembers(){$("membersList").innerHTML=users.map(u=>`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>身份：${memberType(u.id)}<br>地址：${esc(u.address||"")} ${canCore()?`<br><button data-contract-user="${u.id}">設定／升級特約</button>`:""}</div>`).join("")||"尚無會員。";document.querySelectorAll("[data-contract-user]").forEach(b=>b.onclick=()=>saveContract(b.dataset.contractUser))}function renderContracts(){$("contractsList").innerHTML=contractMembers.map(c=>{const u=userById(c.user_id);return`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>期限：${esc(c.contract_end_date||"")}<br>條件：${esc(c.contract_terms||"")}<br>折數：${c.discount_percent||100}%｜額度：${c.monthly_allowed_count||0} ${esc(c.usage_type||"")} ${canCore()?`<br><button data-contract-user="${c.user_id}">修改特約</button>`:""}</div>`}).join("")||"尚無特約設定。";document.querySelectorAll("[data-contract-user]").forEach(b=>b.onclick=()=>saveContract(b.dataset.contractUser))}function renderManagers(){$("managersList").innerHTML=canRoot()?"最高權限管理員可管理管理員。下一版加入升級／停權按鈕。":"只有最高權限管理員可管理管理員。"}function renderHistory(){$("historyList").innerHTML=auditLogs.length?auditLogs.map(a=>`<div class="item"><b>${esc(a.action)}</b><br>${esc(a.message||"")}<br>${new Date(a.created_at).toLocaleString()}</div>`).join(""):"尚無歷史紀錄。"}function renderSiteSettings(){$("siteSettingContent").innerHTML=`<div class="row"><label>公告內容</label><textarea id="settingAnnouncement">${esc(setting().announcement||"")}</textarea></div><div class="row"><label>活動折數</label><input id="settingDiscount" type="number" value="${setting().activity_discount_percent||100}"></div><div class="actions"><button onclick="saveSiteSettings()">儲存公告／折數</button></div>`}
+async function updateProfile(){try{if(!session.user){alert("請先登入會員");return}const payload={name:$("profileName").value.trim(),birthday:$("profileBirthday").value,phone:$("profilePhone").value.trim(),address:$("profileAddress").value.trim()};const {error}=await supabaseClient.from("users").update(payload).eq("id",session.user.id);if(error)throw error;session.user={...session.user,...payload};await loadData();alert("會員資料已更新")}catch(e){alert("更新失敗："+e.message)}}async function confirmRequest(id){try{const r=requests.find(x=>x.id===id);if(!r)return;const {error:e1}=await supabaseClient.from("bookings").insert({user_id:r.user_id,space:r.space,period:r.period,private_space:r.private_space,usage_content:r.usage_content,note:r.note,status:"confirmed",payment_status:"paid",booking_date:r.booking_date,confirmed_at:new Date().toISOString()});if(e1)throw e1;const {error:e2}=await supabaseClient.from("external_requests").update({status:"confirmed",payment_status:"paid"}).eq("id",id);if(e2)throw e2;await supabaseClient.from("audit_logs").insert({action:"confirmBooking",target_type:"external_request",target_id:id,message:"確認匯款並轉正式預約"});await loadData()}catch(e){alert("確認失敗："+e.message)}}async function cancelRequest(id){try{const {error}=await supabaseClient.from("external_requests").update({status:"cancelled",payment_status:"cancelled"}).eq("id",id);if(error)throw error;await loadData()}catch(e){alert("取消失敗："+e.message)}}async function saveSiteSettings(){
+  try{
+    if(!canCore()){
+      alert("核心管理員以上才可修改公告、折數與價格");
+      return;
+    }
+
+    const id=setting().id;
+    const payload={
+      announcement:$("settingAnnouncement").value,
+      activity_discount_percent:Number($("settingDiscount").value||100),
+      updated_at:new Date().toISOString()
+    };
+
+    const q=id
+      ? supabaseClient.from("site_settings").update(payload).eq("id",id)
+      : supabaseClient.from("site_settings").insert(payload);
+
+    const {error}=await q;
+    if(error)throw error;
+
+    const priceInputs=[
+      ["weekday","hour","price_weekday_hour"],
+      ["weekday","four_hour","price_weekday_four_hour"],
+      ["weekday","full_day","price_weekday_full_day"],
+      ["holiday","hour","price_holiday_hour"],
+      ["holiday","four_hour","price_holiday_four_hour"],
+      ["holiday","full_day","price_holiday_full_day"]
+    ];
+
+    for(const [day_type,price_type,inputId] of priceInputs){
+      const existing=priceRule(day_type,price_type);
+      const price=Number($(inputId).value||0);
+      if(existing){
+        const {error:e}=await supabaseClient.from("pricing_rules").update({price}).eq("id",existing.id);
+        if(e)throw e;
+      }else{
+        const {error:e}=await supabaseClient.from("pricing_rules").insert({day_type,price_type,price});
+        if(e)throw e;
+      }
+    }
+
+    await loadData();
+    alert("系統設定已更新");
+  }catch(e){
+    alert("更新失敗："+e.message);
+  }
+}
+async function saveContract(userId){try{if(!canCore()){alert("核心管理員以上才可修改特約設定");return}const ex=contractMembers.find(c=>c.user_id===userId),payload={user_id:userId,status:"active",is_active:true,contract_end_date:prompt("特約期限 YYYY-MM-DD",ex?.contract_end_date||"2026-12-31"),contract_terms:prompt("特約條件",ex?.contract_terms||"每月4次"),discount_percent:Number(prompt("特約預約折數，例如90=9折",ex?.discount_percent||100)||100),monthly_allowed_count:Number(prompt("每月額度",ex?.monthly_allowed_count||4)||4),usage_type:prompt("計算方式 timeslot 或 day",ex?.usage_type||"timeslot")||"timeslot",manager_name:session.name};const q=ex?supabaseClient.from("contract_members").update(payload).eq("id",ex.id):supabaseClient.from("contract_members").insert(payload);const {error}=await q;if(error)throw error;await loadData()}catch(e){alert("特約設定失敗："+e.message)}}
+function renderMemberProfile(){const box=$("memberProfileContent");if(session.type==="guest"){box.innerHTML="請先登入會員。";return}if(session.type==="admin"){box.innerHTML="管理員模式請至會員管理查看資料。";return}const u=session.user,c=contractByUser(u.id);box.innerHTML=`<div class="grid2"><div class="row"><label>姓名</label><input id="profileName" value="${esc(u.name||"")}"></div><div class="row"><label>生日</label><input id="profileBirthday" type="date" value="${esc(u.birthday||"")}"></div><div class="row"><label>電話</label><input id="profilePhone" value="${esc(u.phone||"")}"></div><div class="row"><label>地址</label><input id="profileAddress" value="${esc(u.address||"")}"></div></div><div class="panel"><h2>系統身份資訊</h2><div class="small">會員身份：${c?"特約會員":"一般會員"}<br>特約期限：${esc(c?.contract_end_date||"無")}<br>特約條件：${esc(c?.contract_terms||"無")}<br>特約折數：${c?.discount_percent?`${c.discount_percent}%`:"無"}<br>特約額度：${c?.monthly_allowed_count||"無"} ${esc(c?.usage_type||"")}</div></div><div class="actions"><button onclick="updateProfile()">儲存會員資料</button></div>`}function renderMyBookings(){const box=$("myBookingsList");if(!session.user){box.innerHTML="請先登入會員。";return}const myB=bookings.filter(b=>b.user_id===session.user.id),myR=requests.filter(r=>r.user_id===session.user.id);box.innerHTML=[...myR.map(r=>`<div class="item">申請中｜${esc(r.booking_date)}｜${labels[r.space]}｜${periodLabels[r.period]}<br>${esc(r.usage_content||"")}</div>`),...myB.map(b=>`<div class="item">正式預約｜${esc(b.booking_date)}｜${labels[b.space]}｜${periodLabels[b.period]}<br>${esc(b.usage_content||"")}</div>`)].join("")||"目前沒有預約紀錄。"}function renderPrices(){
+  const weekdayHour=priceRule("weekday","hour")?.price||250;
+  const weekdayFour=priceRule("weekday","four_hour")?.price||900;
+  const weekdayDay=priceRule("weekday","full_day")?.price||1700;
+  const holidayHour=priceRule("holiday","hour")?.price||300;
+  const holidayFour=priceRule("holiday","four_hour")?.price||1100;
+  const holidayDay=priceRule("holiday","full_day")?.price||2100;
+  const discount=setting().activity_discount_percent||100;
+
+  const compact=`
+    <div class="price-compact">
+      <div class="price-pill"><b>平日</b><br>$${weekdayHour}/小時｜$${weekdayFour}/4小時｜$${weekdayDay}/日</div>
+      <div class="price-pill"><b>假日</b><br>$${holidayHour}/小時｜$${holidayFour}/4小時｜$${holidayDay}/日</div>
+      <div class="price-pill">活動折數：${discount}%<br>特約以合約內容為主</div>
+    </div>
+  `;
+
+  if($("sidePrice")) $("sidePrice").innerHTML=compact;
+  if($("priceList")) $("priceList").innerHTML=compact;
+}function renderNotice(){$("noticeContent").innerHTML=esc(setting().announcement||"暫無公告").replaceAll("\n","<br>");$("sideNotice").innerHTML=esc(setting().announcement||"暫無公告").replaceAll("\n","<br>")}function renderRequests(){const box=$("requestsList"),list=requests.filter(isPendingRequest);box.innerHTML=list.length?list.map(r=>{const u=userById(r.user_id);return`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>${esc(r.booking_date)}｜${labels[r.space]}｜${periodLabels[r.period]}<br>${esc(r.usage_content||"")}<br><button data-confirm="${r.id}">確認匯款轉正式</button><button data-cancel="${r.id}">取消</button></div>`}).join(""):"目前沒有待確認申請。";box.querySelectorAll("[data-confirm]").forEach(b=>b.onclick=()=>confirmRequest(b.dataset.confirm));box.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>cancelRequest(b.dataset.cancel))}function renderMembers(){$("membersList").innerHTML=users.map(u=>`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>身份：${memberType(u.id)}<br>地址：${esc(u.address||"")} ${canCore()?`<br><button data-contract-user="${u.id}">設定／升級特約</button>`:""}</div>`).join("")||"尚無會員。";document.querySelectorAll("[data-contract-user]").forEach(b=>b.onclick=()=>saveContract(b.dataset.contractUser))}function renderContracts(){$("contractsList").innerHTML=contractMembers.map(c=>{const u=userById(c.user_id);return`<div class="item"><b>${esc(u.name||"未命名")}</b>｜${esc(u.phone||"")}<br>期限：${esc(c.contract_end_date||"")}<br>條件：${esc(c.contract_terms||"")}<br>折數：${c.discount_percent||100}%｜額度：${c.monthly_allowed_count||0} ${esc(c.usage_type||"")} ${canCore()?`<br><button data-contract-user="${c.user_id}">修改特約</button>`:""}</div>`}).join("")||"尚無特約設定。";document.querySelectorAll("[data-contract-user]").forEach(b=>b.onclick=()=>saveContract(b.dataset.contractUser))}function renderManagers(){$("managersList").innerHTML=canRoot()?"最高權限管理員可管理管理員。下一版加入升級／停權按鈕。":"只有最高權限管理員可管理管理員。"}function renderHistory(){$("historyList").innerHTML=auditLogs.length?auditLogs.map(a=>`<div class="item"><b>${esc(a.action)}</b><br>${esc(a.message||"")}<br>${new Date(a.created_at).toLocaleString()}</div>`).join(""):"尚無歷史紀錄。"}function renderSiteSettings(){
+  const weekdayHour=priceRule("weekday","hour")?.price||250;
+  const weekdayFour=priceRule("weekday","four_hour")?.price||900;
+  const weekdayDay=priceRule("weekday","full_day")?.price||1700;
+  const holidayHour=priceRule("holiday","hour")?.price||300;
+  const holidayFour=priceRule("holiday","four_hour")?.price||1100;
+  const holidayDay=priceRule("holiday","full_day")?.price||2100;
+
+  $("siteSettingContent").innerHTML=`
+    <div class="row"><label>公告內容</label><textarea id="settingAnnouncement">${esc(setting().announcement||"")}</textarea></div>
+    <div class="row"><label>活動折數</label><input id="settingDiscount" type="number" value="${setting().activity_discount_percent||100}"></div>
+    <h3>價格設定</h3>
+    <div class="grid3">
+      <div class="row"><label>平日｜小時</label><input id="price_weekday_hour" type="number" value="${weekdayHour}"></div>
+      <div class="row"><label>平日｜4小時</label><input id="price_weekday_four_hour" type="number" value="${weekdayFour}"></div>
+      <div class="row"><label>平日｜整天</label><input id="price_weekday_full_day" type="number" value="${weekdayDay}"></div>
+      <div class="row"><label>假日｜小時</label><input id="price_holiday_hour" type="number" value="${holidayHour}"></div>
+      <div class="row"><label>假日｜4小時</label><input id="price_holiday_four_hour" type="number" value="${holidayFour}"></div>
+      <div class="row"><label>假日｜整天</label><input id="price_holiday_full_day" type="number" value="${holidayDay}"></div>
+    </div>
+    <div class="actions"><button onclick="saveSiteSettings()">儲存系統設定</button></div>
+  `;
+}
 function bind(){$("prevBtn").onclick=()=>{current.setMonth(current.getMonth()-1);renderAll()};$("nextBtn").onclick=()=>{current.setMonth(current.getMonth()+1);renderAll()};$("memberLoginBtn").onclick=()=>openModal("memberLoginModal");$("lineLoginBtn").onclick=()=>{const clientId="2010067985",redirectUri="https://miengzhangrd.pages.dev/login-callback.html",state=`member_${Date.now()}`;location.href=`https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=profile%20openid`};$("adminBtn").onclick=()=>openModal("adminModal");document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>switchView(b.dataset.view));$("loginMember").onclick=loginMember;$("quickRegister").onclick=quickRegister;$("loginAdmin").onclick=loginAdmin;$("saveRequest").onclick=saveRequest;$("requestDate").onchange=()=>{fillRequestSpaces($("requestDate").value);fillRequestPeriods($("requestDate").value,$("requestSpace").value)};$("requestSpace").onchange=()=>fillRequestPeriods($("requestDate").value,$("requestSpace").value);$("requestPriceType").onchange=updateRequestPrice}
 bind();loadData().catch(e=>{$("syncStatus").textContent="Supabase 錯誤："+e.message;console.error(e)});
 </script>

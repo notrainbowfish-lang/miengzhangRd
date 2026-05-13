@@ -3,127 +3,328 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LINE 會員登入／註冊</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>LINE 登入處理中</title>
 <style>
-:root{--bg:#fffaf6;--paper:#fffdf9;--ink:#4b3128;--line:#ead9cd;--accent:#d8b7a3}
+:root{
+--bg:#fffaf6;
+--paper:#fffdf9;
+--ink:#4b3128;
+--line:#ead9cd;
+--accent:#d8b7a3;
+}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top left,#ffe2d8aa,transparent 32%),var(--bg);font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;color:var(--ink)}
-.wrap{max-width:720px;margin:36px auto;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 12px 34px rgba(95,56,35,.08)}
-h1{text-align:center;letter-spacing:.1em}
-.info{background:#fff4ed;border:1px solid var(--line);border-radius:16px;padding:14px;line-height:1.7;margin-bottom:18px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row{margin:8px 0}label{display:block;margin-bottom:6px;color:#74584d}
-input{width:100%;padding:12px;border-radius:12px;border:1px solid #e6d6ca;background:#fff;font:inherit}
-button{width:100%;padding:14px;border:none;border-radius:14px;background:var(--accent);color:#fff;font-size:16px;cursor:pointer;margin-top:14px}
-.msg{margin-top:14px;line-height:1.7}
-@media(max-width:640px){.wrap{margin:18px 12px;padding:20px}.grid{grid-template-columns:1fr}}
+body{
+margin:0;
+min-height:100vh;
+background:radial-gradient(circle at top left,#ffe2d8aa,transparent 32%),var(--bg);
+font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;
+color:var(--ink);
+display:flex;
+align-items:center;
+justify-content:center;
+padding:24px;
+}
+.card{
+width:min(92vw,680px);
+background:var(--paper);
+border:1px solid var(--line);
+border-radius:28px;
+padding:32px;
+box-shadow:0 18px 50px rgba(95,56,35,.08);
+}
+h1{text-align:center;letter-spacing:.12em}
+.info{
+background:#fff4ed;
+border:1px solid var(--line);
+border-radius:18px;
+padding:16px;
+line-height:1.8;
+margin-bottom:20px;
+}
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+.row{margin:8px 0}
+label{display:block;margin-bottom:6px;color:#7a5b50}
+input{
+width:100%;
+padding:12px;
+border-radius:14px;
+border:1px solid #e7d8cd;
+background:#fff;
+font:inherit;
+}
+button{
+width:100%;
+border:none;
+border-radius:16px;
+padding:14px;
+margin-top:18px;
+background:var(--accent);
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+#msg{margin-top:18px;line-height:1.8}
+@media(max-width:640px){
+.grid{grid-template-columns:1fr}
+.card{padding:24px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-<h1>LINE 會員登入</h1>
-<div class="info" id="info">已收到 LINE 回傳。若是首次使用，請建立會員資料。</div>
 
-<div id="registerBox">
-  <div class="grid">
-    <div class="row"><label>帳號</label><input id="account" autocomplete="username"></div>
-    <div class="row"><label>密碼</label><input id="password" type="password" autocomplete="new-password"></div>
-    <div class="row"><label>確認密碼</label><input id="password2" type="password" autocomplete="new-password"></div>
-    <div class="row"><label>姓名</label><input id="name"></div>
-    <div class="row"><label>生日</label><input id="birthday" type="date"></div>
-    <div class="row"><label>電話</label><input id="phone"></div>
-    <div class="row" style="grid-column:1/-1"><label>地址</label><input id="address"></div>
-  </div>
-  <button id="registerBtn">建立會員並登入</button>
+<div class="card">
+
+<h1>LINE 會員登入</h1>
+
+<div class="info" id="info">
+正在確認 LINE 會員資料...
 </div>
 
-<div class="msg" id="msg"></div>
+<div id="registerBox" style="display:none">
+
+<div class="info">
+第一次使用共享空間系統，請建立會員資料。
+</div>
+
+<div class="grid">
+
+<div class="row">
+<label>帳號</label>
+<input id="account">
+</div>
+
+<div class="row">
+<label>密碼</label>
+<input id="password" type="password">
+</div>
+
+<div class="row">
+<label>確認密碼</label>
+<input id="password2" type="password">
+</div>
+
+<div class="row">
+<label>姓名</label>
+<input id="name">
+</div>
+
+<div class="row">
+<label>生日</label>
+<input id="birthday" type="date">
+</div>
+
+<div class="row">
+<label>電話</label>
+<input id="phone">
+</div>
+
+<div class="row" style="grid-column:1/-1">
+<label>地址</label>
+<input id="address">
+</div>
+
+</div>
+
+<button id="registerBtn">
+建立會員並登入
+</button>
+
+</div>
+
+<div id="msg"></div>
+
 </div>
 
 <script>
-const SUPABASE_URL="https://ydseiiolfmekvhpcplua.supabase.co";
-const SUPABASE_KEY="sb_publishable_SmBYBYW2zSddH5CiJ-HDZA_yrZ9CfBp";
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const params=new URLSearchParams(location.search);
-const lineCode=params.get("code");
-const msg=document.getElementById("msg");
+const WORKER_URL =
+"https://yumu-line-login.notrainbowfish.workers.dev/";
+
+const SUPABASE_URL =
+"https://ydseiiolfmekvhpcplua.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_SmBYBYW2zSddH5CiJ-HDZA_yrZ9CfBp";
+
+const params =
+new URLSearchParams(location.search);
+
+const code =
+params.get("code");
+
+const msg =
+document.getElementById("msg");
+
+let lineUserId = null;
 
 function goHome(){
-  setTimeout(()=>{ location.href="/"; },900);
+setTimeout(()=>{
+location.href="/";
+},900);
 }
 
-async function tryExistingLogin(){
-  if(!lineCode){
-    msg.innerHTML="沒有收到 LINE code，請回首頁重新登入。";
-    return;
-  }
+async function checkLineLogin(){
 
-  // 暫時測試邏輯：先用 line_code 判斷。
-  // 正式版會改 Cloudflare Worker 換固定 line_user_id。
-  const {data,error}=await supabaseClient
-    .from("users")
-    .select("*")
-    .eq("line_code",lineCode)
-    .limit(1);
-
-  if(error){
-    msg.innerHTML="讀取會員失敗："+error.message;
-    return;
-  }
-
-  if(data && data.length){
-    localStorage.setItem("yumu_user_id",data[0].id);
-    document.getElementById("registerBox").style.display="none";
-    msg.innerHTML="已登入會員，正在返回首頁...";
-    goHome();
-  }
+if(!code){
+msg.innerHTML =
+"沒有收到 LINE code，請重新登入。";
+return;
 }
 
-document.getElementById("registerBtn").onclick=async()=>{
-  const account=document.getElementById("account").value.trim();
-  const password=document.getElementById("password").value.trim();
-  const password2=document.getElementById("password2").value.trim();
-  const name=document.getElementById("name").value.trim();
-  const birthday=document.getElementById("birthday").value;
-  const phone=document.getElementById("phone").value.trim();
-  const address=document.getElementById("address").value.trim();
+try{
 
-  if(!account||!password||!name||!birthday||!phone){
-    alert("請填寫帳號、密碼、姓名、生日、電話");
-    return;
-  }
-  if(password!==password2){
-    alert("兩次密碼不一致");
-    return;
-  }
+const res = await fetch(
+WORKER_URL + "?code=" + encodeURIComponent(code)
+);
 
-  const {data,error}=await supabaseClient
-    .from("users")
-    .insert({
-      account,password,name,birthday,phone,address,
-      line_code:lineCode,
-      line_linked:true,
-      status:"active"
-    })
-    .select()
-    .single();
+const data = await res.json();
 
-  if(error){
-    if(String(error.message).includes("duplicate")){
-      msg.innerHTML="建立失敗：這個帳號已經被使用，請換一個帳號。";
-    }else{
-      msg.innerHTML="建立失敗："+error.message;
-    }
-    return;
-  }
+if(data.error){
+msg.innerHTML =
+"LINE 驗證失敗：" +
+JSON.stringify(data.detail || data.error);
+return;
+}
 
-  localStorage.setItem("yumu_user_id",data.id);
-  msg.innerHTML="會員建立成功，正在返回首頁...";
-  goHome();
+if(data.existing){
+
+localStorage.setItem(
+"yumu_user_id",
+data.user.id
+);
+
+msg.innerHTML =
+"已登入會員，正在返回首頁...";
+
+goHome();
+return;
+}
+
+lineUserId =
+data.line_user_id;
+
+document.getElementById(
+"registerBox"
+).style.display = "block";
+
+document.getElementById(
+"info"
+).innerHTML =
+"第一次使用共享空間系統，請建立會員。";
+
+}catch(err){
+
+msg.innerHTML =
+"登入失敗：" + err.message;
+
+}
+
+}
+
+document.getElementById(
+"registerBtn"
+).onclick = async()=>{
+
+const account =
+document.getElementById("account")
+.value.trim();
+
+const password =
+document.getElementById("password")
+.value.trim();
+
+const password2 =
+document.getElementById("password2")
+.value.trim();
+
+const name =
+document.getElementById("name")
+.value.trim();
+
+const birthday =
+document.getElementById("birthday")
+.value;
+
+const phone =
+document.getElementById("phone")
+.value.trim();
+
+const address =
+document.getElementById("address")
+.value.trim();
+
+if(
+!account ||
+!password ||
+!name ||
+!birthday ||
+!phone
+){
+alert("請完整填寫會員資料");
+return;
+}
+
+if(password !== password2){
+alert("兩次密碼不一致");
+return;
+}
+
+const res = await fetch(
+SUPABASE_URL + "/rest/v1/users",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY,
+"Authorization":
+"Bearer " + SUPABASE_KEY,
+"Prefer":"return=representation"
+},
+body:JSON.stringify({
+account,
+password,
+name,
+birthday,
+phone,
+address,
+line_user_id:lineUserId,
+line_linked:true,
+status:"active"
+})
+}
+);
+
+const data =
+await res.json();
+
+if(!res.ok){
+
+msg.innerHTML =
+"建立失敗：" +
+JSON.stringify(data);
+
+return;
+}
+
+localStorage.setItem(
+"yumu_user_id",
+data[0].id
+);
+
+msg.innerHTML =
+"會員建立成功，正在返回首頁...";
+
+goHome();
+
 };
 
-tryExistingLogin();
+checkLineLogin();
+
 </script>
+
 </body>
 </html>

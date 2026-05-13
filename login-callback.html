@@ -3,208 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LINE 會員註冊</title>
-
+<title>LINE 會員登入／註冊</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-body{
-  margin:0;
-  background:#fffaf6;
-  font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;
-  color:#4b3128;
-}
-
-.wrap{
-  max-width:700px;
-  margin:40px auto;
-  background:white;
-  border-radius:24px;
-  padding:32px;
-  border:1px solid #ead9cd;
-}
-
-h1{
-  text-align:center;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
-
-.row{
-  margin:12px 0;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:1px solid #ddd;
-  box-sizing:border-box;
-}
-
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:14px;
-  background:#d8b7a3;
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.info{
-  margin-bottom:20px;
-  background:#fff4ed;
-  padding:16px;
-  border-radius:14px;
-}
+:root{--bg:#fffaf6;--paper:#fffdf9;--ink:#4b3128;--line:#ead9cd;--accent:#d8b7a3}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#ffe2d8aa,transparent 32%),var(--bg);font-family:"Noto Serif CJK JP","Microsoft JhengHei",serif;color:var(--ink)}
+.wrap{max-width:720px;margin:36px auto;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 12px 34px rgba(95,56,35,.08)}
+h1{text-align:center;letter-spacing:.1em}
+.info{background:#fff4ed;border:1px solid var(--line);border-radius:16px;padding:14px;line-height:1.7;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row{margin:8px 0}label{display:block;margin-bottom:6px;color:#74584d}
+input{width:100%;padding:12px;border-radius:12px;border:1px solid #e6d6ca;background:#fff;font:inherit}
+button{width:100%;padding:14px;border:none;border-radius:14px;background:var(--accent);color:#fff;font-size:16px;cursor:pointer;margin-top:14px}
+.msg{margin-top:14px;line-height:1.7}
+@media(max-width:640px){.wrap{margin:18px 12px;padding:20px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
-
 <div class="wrap">
+<h1>LINE 會員登入</h1>
+<div class="info" id="info">已收到 LINE 回傳。若是首次使用，請建立會員資料。</div>
 
-<h1>首次 LINE 登入</h1>
-
-<div class="info">
-已收到 LINE 登入資訊。<br>
-請先建立會員資料。
+<div id="registerBox">
+  <div class="grid">
+    <div class="row"><label>帳號</label><input id="account" autocomplete="username"></div>
+    <div class="row"><label>密碼</label><input id="password" type="password" autocomplete="new-password"></div>
+    <div class="row"><label>確認密碼</label><input id="password2" type="password" autocomplete="new-password"></div>
+    <div class="row"><label>姓名</label><input id="name"></div>
+    <div class="row"><label>生日</label><input id="birthday" type="date"></div>
+    <div class="row"><label>電話</label><input id="phone"></div>
+    <div class="row" style="grid-column:1/-1"><label>地址</label><input id="address"></div>
+  </div>
+  <button id="registerBtn">建立會員並登入</button>
 </div>
 
-<div class="grid">
-
-<div class="row">
-帳號
-<input id="account">
-</div>
-
-<div class="row">
-密碼
-<input id="password" type="password">
-</div>
-
-<div class="row">
-確認密碼
-<input id="password2" type="password">
-</div>
-
-<div class="row">
-姓名
-<input id="name">
-</div>
-
-<div class="row">
-生日
-<input id="birthday" type="date">
-</div>
-
-<div class="row">
-電話
-<input id="phone">
-</div>
-
-<div class="row" style="grid-column:1 / -1;">
-地址
-<input id="address">
-</div>
-
-</div>
-
-<button id="registerBtn">
-建立會員
-</button>
-
-<div id="msg"></div>
-
+<div class="msg" id="msg"></div>
 </div>
 
 <script>
+const SUPABASE_URL="https://ydseiiolfmekvhpcplua.supabase.co";
+const SUPABASE_KEY="sb_publishable_SmBYBYW2zSddH5CiJ-HDZA_yrZ9CfBp";
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const SUPABASE_URL =
-'https://ydseiiolfmekvhpcplua.supabase.co';
+const params=new URLSearchParams(location.search);
+const lineCode=params.get("code");
+const msg=document.getElementById("msg");
 
-const SUPABASE_KEY =
-'sb_publishable_SmBYBYW2zSddH5CiJ-HDZA_yrZ9CfBp';
-
-const supabaseClient =
-supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
-const params =
-new URLSearchParams(location.search);
-
-const lineCode =
-params.get("code");
-
-document
-.getElementById("registerBtn")
-.onclick = async () => {
-
-const account =
-document.getElementById("account").value.trim();
-
-const password =
-document.getElementById("password").value.trim();
-
-const password2 =
-document.getElementById("password2").value.trim();
-
-const name =
-document.getElementById("name").value.trim();
-
-const birthday =
-document.getElementById("birthday").value;
-
-const phone =
-document.getElementById("phone").value.trim();
-
-const address =
-document.getElementById("address").value.trim();
-
-if(password !== password2){
-  alert("兩次密碼不一致");
-  return;
+function goHome(){
+  setTimeout(()=>{ location.href="/"; },900);
 }
 
-const { error } =
-await supabaseClient
-.from("users")
-.insert({
-  account,
-  password,
-  name,
-  birthday,
-  phone,
-  address,
-  line_code: lineCode,
-  line_linked: true,
-  status:"active"
-});
+async function tryExistingLogin(){
+  if(!lineCode){
+    msg.innerHTML="沒有收到 LINE code，請回首頁重新登入。";
+    return;
+  }
 
-if(error){
-  document.getElementById("msg").innerHTML =
-  "建立失敗：" + error.message;
-  return;
+  // 暫時測試邏輯：先用 line_code 判斷。
+  // 正式版會改 Cloudflare Worker 換固定 line_user_id。
+  const {data,error}=await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("line_code",lineCode)
+    .limit(1);
+
+  if(error){
+    msg.innerHTML="讀取會員失敗："+error.message;
+    return;
+  }
+
+  if(data && data.length){
+    localStorage.setItem("yumu_user_id",data[0].id);
+    document.getElementById("registerBox").style.display="none";
+    msg.innerHTML="已登入會員，正在返回首頁...";
+    goHome();
+  }
 }
 
-document.getElementById("msg").innerHTML =
-"會員建立成功，正在返回首頁...";
+document.getElementById("registerBtn").onclick=async()=>{
+  const account=document.getElementById("account").value.trim();
+  const password=document.getElementById("password").value.trim();
+  const password2=document.getElementById("password2").value.trim();
+  const name=document.getElementById("name").value.trim();
+  const birthday=document.getElementById("birthday").value;
+  const phone=document.getElementById("phone").value.trim();
+  const address=document.getElementById("address").value.trim();
 
-setTimeout(()=>{
-  location.href="/";
-},1500);
+  if(!account||!password||!name||!birthday||!phone){
+    alert("請填寫帳號、密碼、姓名、生日、電話");
+    return;
+  }
+  if(password!==password2){
+    alert("兩次密碼不一致");
+    return;
+  }
 
+  const {data,error}=await supabaseClient
+    .from("users")
+    .insert({
+      account,password,name,birthday,phone,address,
+      line_code:lineCode,
+      line_linked:true,
+      status:"active"
+    })
+    .select()
+    .single();
+
+  if(error){
+    if(String(error.message).includes("duplicate")){
+      msg.innerHTML="建立失敗：這個帳號已經被使用，請換一個帳號。";
+    }else{
+      msg.innerHTML="建立失敗："+error.message;
+    }
+    return;
+  }
+
+  localStorage.setItem("yumu_user_id",data.id);
+  msg.innerHTML="會員建立成功，正在返回首頁...";
+  goHome();
 };
 
+tryExistingLogin();
 </script>
-
 </body>
 </html>
